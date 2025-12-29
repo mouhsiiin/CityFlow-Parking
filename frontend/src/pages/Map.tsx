@@ -1,0 +1,439 @@
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import L from 'leaflet';
+import { spotService, reservationService } from '../services';
+import type { ParkingSpot } from '../types';
+import { Card, Button, Input } from '../components';
+import { MapPin, Zap, Info } from 'lucide-react';
+import { useNotification } from '../context/NotificationContext';
+
+// Fix Leaflet default icon issue with Vite
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
+// Custom icons for different spot types
+const createCustomIcon = (type: 'parking' | 'ev_charging', status: string) => {
+  const color = status === 'available' ? (type === 'ev_charging' ? '#EAB308' : '#3B82F6') : '#9CA3AF';
+  const symbol = type === 'ev_charging' ? '⚡' : '🅿️';
+  
+  return L.divIcon({
+    html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size: 16px;">${symbol}</div>`,
+    className: 'custom-marker',
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+  });
+};
+
+// Component to update map view when selected spot changes
+const MapUpdater: React.FC<{ spot: ParkingSpot | null }> = ({ spot }) => {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (spot) {
+      map.flyTo([spot.location.latitude, spot.location.longitude], 16, {
+        duration: 1,
+      });
+    }
+  }, [spot, map]);
+  
+  return null;
+};
+
+export const Map: React.FC = () => {
+  const notification = useNotification();
+  const [spots, setSpots] = useState<ParkingSpot[]>([]);
+  const [filteredSpots, setFilteredSpots] = useState<ParkingSpot[]>([]);
+  const [selectedSpot, setSelectedSpot] = useState<ParkingSpot | null>(null);
+  const [filterType, setFilterType] = useState<'all' | 'parking' | 'ev_charging'>('all');
+  const [showAvailableOnly, setShowAvailableOnly] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showReservationModal, setShowReservationModal] = useState(false);
+
+  // Reservation form state
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [isReserving, setIsReserving] = useState(false);
+
+  useEffect(() => {
+    loadSpots();
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [spots, filterType, showAvailableOnly]);
+
+  const loadSpots = async () => {
+    try {
+      setIsLoading(true);
+      const data = await spotService.getAllSpots();
+      setSpots(data);
+    } catch (error) {
+      console.error('Error loading spots:', error);
+      notification.error('Failed to load spots', 'Please try refreshing the page');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = spots;
+
+    if (filterType !== 'all') {
+      filtered = filtered.filter((spot) => spot.type === filterType);
+    }
+
+    if (showAvailableOnly) {
+      filtered = filtered.filter((spot) => spot.status === 'available');
+    }
+
+    setFilteredSpots(filtered);
+  };
+
+  const handleSpotClick = (spot: ParkingSpot) => {
+    setSelectedSpot(spot);
+  };
+
+  const handleReserveClick = () => {
+    // Set default times
+    const now = new Date();
+    const start = new Date(now.getTime() + 30 * 60000); // 30 mins from now
+    const end = new Date(start.getTime() + 2 * 3600000); // 2 hours later
+
+    setStartTime(formatDateTimeLocal(start));
+    setEndTime(formatDateTimeLocal(end));
+    setShowReservationModal(true);
+  };
+
+  const formatDateTimeLocal = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  const calculateCost = (): number => {
+    if (!selectedSpot || !startTime || !endTime) return 0;
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    return hours * selectedSpot.pricePerHour;
+  };
+
+  const handleReservation = async () => {
+    if (!selectedSpot) return;
+
+    try {
+      setIsReserving(true);
+      const reservation = await reservationService.createReservation({
+        spotId: selectedSpot.id,
+        startTime: new Date(startTime).toISOString(),
+        endTime: new Date(endTime).toISOString(),
+      });
+
+      notification.success(
+        'Reservation created successfully!',
+        `Transaction ID: ${reservation.blockchainTxHash || 'Pending'}`
+      );
+      setShowReservationModal(false);
+      setSelectedSpot(null);
+      await loadSpots(); // Refresh spots
+    } catch (error: any) {
+      notification.error(
+        'Failed to create reservation',
+        error.response?.data?.error || error.message || 'Please try again'
+      );
+    } finally {
+      setIsReserving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Find Parking & Charging Spots</h1>
+        <p className="text-gray-600 mt-2">Browse and reserve available spots in real-time</p>
+      </div>
+
+      {/* Filters */}
+      <Card className="mb-6">
+        <div className="flex flex-wrap items-center gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <div className="flex gap-2">
+              <Button
+                variant={filterType === 'all' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => setFilterType('all')}
+              >
+                All
+              </Button>
+              <Button
+                variant={filterType === 'parking' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => setFilterType('parking')}
+              >
+                <MapPin className="mr-1 h-4 w-4" />
+                Parking
+              </Button>
+              <Button
+                variant={filterType === 'ev_charging' ? 'primary' : 'ghost'}
+                size="sm"
+                onClick={() => setFilterType('ev_charging')}
+              >
+                <Zap className="mr-1 h-4 w-4" />
+                EV Charging
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="availableOnly"
+              checked={showAvailableOnly}
+              onChange={(e) => setShowAvailableOnly(e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="availableOnly" className="ml-2 text-sm text-gray-700">
+              Show available only
+            </label>
+          </div>
+
+          <div className="ml-auto text-sm text-gray-600">
+            {filteredSpots.length} spot{filteredSpots.length !== 1 ? 's' : ''} found
+          </div>
+        </div>
+      </Card>
+
+      {/* Map and Spots Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* OpenStreetMap Visualization */}
+        <div className="lg:col-span-2">
+          <Card title="Map View">
+            <div className="rounded-lg h-96 overflow-hidden">
+              <MapContainer
+                center={[40.7128, -74.0060]} // Default to New York City
+                zoom={13}
+                style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom={true}
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                
+                {filteredSpots.map((spot) => (
+                  <Marker
+                    key={spot.id}
+                    position={[spot.location.latitude, spot.location.longitude]}
+                    icon={createCustomIcon(spot.type, spot.status)}
+                    eventHandlers={{
+                      click: () => handleSpotClick(spot),
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-sm">
+                        <p className="font-semibold mb-1">{spot.location.address}</p>
+                        <p className="text-gray-600">
+                          {spot.type === 'ev_charging' ? '⚡ EV Charging' : '🅿️ Parking'}
+                        </p>
+                        <p className="font-medium text-blue-600">${spot.pricePerHour}/hour</p>
+                        <p className={`text-xs mt-1 ${spot.status === 'available' ? 'text-green-600' : 'text-red-600'}`}>
+                          {spot.status.toUpperCase()}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+                
+                <MapUpdater spot={selectedSpot} />
+              </MapContainer>
+            </div>
+          </Card>
+        </div>
+
+        {/* Spot Details / List */}
+        <div>
+          {selectedSpot ? (
+            <Card>
+              <div className="mb-4">
+                <div className="flex items-center mb-2">
+                  {selectedSpot.type === 'ev_charging' ? (
+                    <Zap className="h-6 w-6 text-yellow-500 mr-2" />
+                  ) : (
+                    <MapPin className="h-6 w-6 text-blue-500 mr-2" />
+                  )}
+                  <h3 className="text-xl font-semibold">
+                    {selectedSpot.type === 'ev_charging' ? 'EV Charging Station' : 'Parking Spot'}
+                  </h3>
+                </div>
+                <span
+                  className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
+                    selectedSpot.status === 'available'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {selectedSpot.status.toUpperCase()}
+                </span>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                <div>
+                  <p className="text-sm text-gray-600">Location</p>
+                  <p className="font-medium">{selectedSpot.location.address}</p>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-600">Price</p>
+                  <p className="font-medium text-lg">${selectedSpot.pricePerHour}/hour</p>
+                </div>
+
+                {selectedSpot.chargingPower && (
+                  <div>
+                    <p className="text-sm text-gray-600">Charging Power</p>
+                    <p className="font-medium">{selectedSpot.chargingPower} kW</p>
+                  </div>
+                )}
+
+                {selectedSpot.features && selectedSpot.features.length > 0 && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Features</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedSpot.features.map((feature, index) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {selectedSpot.status === 'available' && (
+                <Button onClick={handleReserveClick} className="w-full">
+                  Reserve This Spot
+                </Button>
+              )}
+              <Button variant="ghost" onClick={() => setSelectedSpot(null)} className="w-full mt-2">
+                Close
+              </Button>
+            </Card>
+          ) : (
+            <Card>
+              <h3 className="text-lg font-semibold mb-4">Available Spots</h3>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {filteredSpots.map((spot) => (
+                  <button
+                    key={spot.id}
+                    onClick={() => handleSpotClick(spot)}
+                    className="w-full text-left p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-start">
+                      {spot.type === 'ev_charging' ? (
+                        <Zap className="h-5 w-5 text-yellow-500 mr-2 mt-0.5" />
+                      ) : (
+                        <MapPin className="h-5 w-5 text-blue-500 mr-2 mt-0.5" />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium text-sm">{spot.location.address}</p>
+                        <p className="text-xs text-gray-600">${spot.pricePerHour}/hr</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+                {filteredSpots.length === 0 && (
+                  <p className="text-gray-500 text-center py-4">No spots available</p>
+                )}
+              </div>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* Reservation Modal */}
+      {showReservationModal && selectedSpot && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-[9999] p-4">
+          <Card className="max-w-md w-full relative z-[10000]">
+            <h2 className="text-2xl font-bold mb-4">Create Reservation</h2>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <p className="text-sm text-gray-600">Location</p>
+                <p className="font-medium">{selectedSpot.location.address}</p>
+              </div>
+
+              <Input
+                type="datetime-local"
+                label="Start Time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+              />
+
+              <Input
+                type="datetime-local"
+                label="End Time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                required
+              />
+
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700">Estimated Cost:</span>
+                  <span className="text-xl font-bold text-blue-600">
+                    ${calculateCost().toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  Transaction will be recorded on blockchain
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={handleReservation}
+                isLoading={isReserving}
+                disabled={!startTime || !endTime}
+                className="flex-1"
+              >
+                Confirm Reservation
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setShowReservationModal(false)}
+                disabled={isReserving}
+              >
+                Cancel
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
