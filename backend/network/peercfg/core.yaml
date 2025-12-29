@@ -1,0 +1,2 @@
+vm.endpoint: unix:///host/var/run/docker.sock
+chaincode.executetimeout: 300s
