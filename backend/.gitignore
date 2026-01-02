@@ -1,0 +1,47 @@
+# Go build
+bin/
+build/
+*.out
+*.exe
+*.exe~
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Go dependencies
+vendor/
+go.sum
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+*.pid
+
+# Fabric specific
+network/channel-artifacts/*.block
+network/channel-artifacts/*.pb
+network/crypto-config/
+organizations/fabric-ca/server/
+
+# Environment
+.env
+.env.local
+
+# Temporary files
+tmp/
+temp/
+*.tmp
