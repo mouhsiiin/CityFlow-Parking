@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"github.com/hyperledger/fabric-contract-api-go/contractapi"
-	"github.com/SecurDrgorP/cityflow-parking-backend/chaincode/charging/contract"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/chaincode/charging/contract"
 )
 
 func main() {

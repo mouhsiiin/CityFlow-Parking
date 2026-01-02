@@ -3,7 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navbar } from './components';
-import { Login, Dashboard, Map, Wallet } from './pages';
+import { Login, Dashboard, Map, Wallet, TransactionHistory } from './pages';
 
 function App() {
   return (
@@ -39,6 +39,15 @@ function App() {
               <ProtectedRoute>
                 <Navbar />
                 <Wallet />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <ProtectedRoute>
+                <Navbar />
+                <TransactionHistory />
               </ProtectedRoute>
             }
           />

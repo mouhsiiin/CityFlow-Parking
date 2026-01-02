@@ -10,45 +10,51 @@ import (
 
 // ParkingSpot represents a parking spot
 type ParkingSpot struct {
-	DocType       string    `json:"docType"`
-	SpotID        string    `json:"spotId"`
-	SpotNumber    string    `json:"spotNumber"`
-	Location      string    `json:"location"`
-	Latitude      float64   `json:"latitude"`
-	Longitude     float64   `json:"longitude"`
-	SpotType      string    `json:"spotType"` // standard, premium, disabled
-	PricePerHour  float64   `json:"pricePerHour"`
-	Status        string    `json:"status"` // available, occupied, reserved, maintenance
-	HasEVCharging bool      `json:"hasEVCharging"`
-	Features      []string  `json:"features"`
-	OperatorID    string    `json:"operatorId"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+	DocType       string   `json:"docType"`
+	SpotID        string   `json:"spotId"`
+	SpotNumber    string   `json:"spotNumber"`
+	Location      string   `json:"location"`
+	Latitude      float64  `json:"latitude"`
+	Longitude     float64  `json:"longitude"`
+	SpotType      string   `json:"spotType"` // standard, premium, disabled
+	PricePerHour  float64  `json:"pricePerHour"`
+	Status        string   `json:"status"` // available, occupied, reserved, maintenance
+	HasEVCharging bool     `json:"hasEVCharging"`
+	Features      []string `json:"features"`
+	OperatorID    string   `json:"operatorId"`
+	CreatedAt     string   `json:"createdAt"`
+	UpdatedAt     string   `json:"updatedAt"`
 }
 
 // Booking represents a parking booking
 type Booking struct {
-	DocType        string    `json:"docType"`
-	BookingID      string    `json:"bookingId"`
-	UserID         string    `json:"userId"`
-	SpotID         string    `json:"spotId"`
-	StartTime      time.Time `json:"startTime"`
-	EndTime        time.Time `json:"endTime"`
-	ActualCheckIn  *time.Time `json:"actualCheckIn,omitempty"`
-	ActualCheckOut *time.Time `json:"actualCheckOut,omitempty"`
-	Duration       int       `json:"duration"` // hours
-	PricePerHour   float64   `json:"pricePerHour"`
-	TotalCost      float64   `json:"totalCost"`
-	Status         string    `json:"status"` // pending, confirmed, active, completed, cancelled
-	QRCode         string    `json:"qrCode"`
-	PaymentID      string    `json:"paymentId"`
-	CreatedAt      time.Time `json:"createdAt"`
-	UpdatedAt      time.Time `json:"updatedAt"`
+	DocType        string  `json:"docType"`
+	BookingID      string  `json:"bookingId"`
+	UserID         string  `json:"userId"`
+	SpotID         string  `json:"spotId"`
+	StartTime      string  `json:"startTime"`
+	EndTime        string  `json:"endTime"`
+	ActualCheckIn  string  `json:"actualCheckIn,omitempty"`
+	ActualCheckOut string  `json:"actualCheckOut,omitempty"`
+	Duration       int     `json:"duration"` // hours
+	PricePerHour   float64 `json:"pricePerHour"`
+	TotalCost      float64 `json:"totalCost"`
+	Status         string  `json:"status"` // pending, confirmed, active, completed, cancelled
+	QRCode         string  `json:"qrCode"`
+	PaymentID      string  `json:"paymentId"`
+	CreatedAt      string  `json:"createdAt"`
+	UpdatedAt      string  `json:"updatedAt"`
 }
 
 // ParkingContract provides functions for managing parking spots and bookings
 type ParkingContract struct {
 	contractapi.Contract
+}
+
+// InitLedger initializes the chaincode
+func (c *ParkingContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
+	// Initialize ledger - no sample data needed for production
+	return nil
 }
 
 // ==================== Parking Spot Management ====================
@@ -63,7 +69,7 @@ func (c *ParkingContract) CreateParkingSpot(ctx contractapi.TransactionContextIn
 		return fmt.Errorf("parking spot %s already exists", spotId)
 	}
 
-	now := time.Now()
+	now := time.Now().Format(time.RFC3339)
 	spot := ParkingSpot{
 		DocType:       "parkingSpot",
 		SpotID:        spotId,
@@ -122,7 +128,7 @@ func (c *ParkingContract) UpdateParkingSpot(ctx contractapi.TransactionContextIn
 	spot.SpotType = spotType
 	spot.PricePerHour = pricePerHour
 	spot.HasEVCharging = hasEVCharging
-	spot.UpdatedAt = time.Now()
+	spot.UpdatedAt = time.Now().Format(time.RFC3339)
 
 	spotJSON, err := json.Marshal(spot)
 	if err != nil {
@@ -140,7 +146,7 @@ func (c *ParkingContract) UpdateSpotStatus(ctx contractapi.TransactionContextInt
 	}
 
 	spot.Status = status
-	spot.UpdatedAt = time.Now()
+	spot.UpdatedAt = time.Now().Format(time.RFC3339)
 
 	spotJSON, err := json.Marshal(spot)
 	if err != nil {
@@ -157,9 +163,8 @@ func (c *ParkingContract) DeleteParkingSpot(ctx contractapi.TransactionContextIn
 
 // GetAllParkingSpots returns all parking spots
 func (c *ParkingContract) GetAllParkingSpots(ctx contractapi.TransactionContextInterface) ([]*ParkingSpot, error) {
-	queryString := `{"selector":{"docType":"parkingSpot"}}`
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Use key range query instead of rich query for LevelDB compatibility
+	resultsIterator, err := ctx.GetStub().GetStateByRange("spot_", "spot_~")
 	if err != nil {
 		return nil, err
 	}
@@ -175,9 +180,13 @@ func (c *ParkingContract) GetAllParkingSpots(ctx contractapi.TransactionContextI
 		var spot ParkingSpot
 		err = json.Unmarshal(queryResponse.Value, &spot)
 		if err != nil {
-			return nil, err
+			continue // Skip invalid records
 		}
-		spots = append(spots, &spot)
+		
+		// Verify it's a parking spot
+		if spot.DocType == "parkingSpot" {
+			spots = append(spots, &spot)
+		}
 	}
 
 	return spots, nil
@@ -185,9 +194,7 @@ func (c *ParkingContract) GetAllParkingSpots(ctx contractapi.TransactionContextI
 
 // GetAvailableSpots returns available parking spots at a location
 func (c *ParkingContract) GetAvailableSpots(ctx contractapi.TransactionContextInterface, location string) ([]*ParkingSpot, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"parkingSpot","location":"%s","status":"available"}}`, location)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("spot_", "spot_~")
 	if err != nil {
 		return nil, err
 	}
@@ -203,9 +210,12 @@ func (c *ParkingContract) GetAvailableSpots(ctx contractapi.TransactionContextIn
 		var spot ParkingSpot
 		err = json.Unmarshal(queryResponse.Value, &spot)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		spots = append(spots, &spot)
+		
+		if spot.DocType == "parkingSpot" && spot.Location == location && spot.Status == "available" {
+			spots = append(spots, &spot)
+		}
 	}
 
 	return spots, nil
@@ -213,9 +223,7 @@ func (c *ParkingContract) GetAvailableSpots(ctx contractapi.TransactionContextIn
 
 // QuerySpotsByLocation returns spots by location
 func (c *ParkingContract) QuerySpotsByLocation(ctx contractapi.TransactionContextInterface, location string) ([]*ParkingSpot, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"parkingSpot","location":"%s"}}`, location)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("spot_", "spot_~")
 	if err != nil {
 		return nil, err
 	}
@@ -231,9 +239,12 @@ func (c *ParkingContract) QuerySpotsByLocation(ctx contractapi.TransactionContex
 		var spot ParkingSpot
 		err = json.Unmarshal(queryResponse.Value, &spot)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		spots = append(spots, &spot)
+		
+		if spot.DocType == "parkingSpot" && spot.Location == location {
+			spots = append(spots, &spot)
+		}
 	}
 
 	return spots, nil
@@ -241,9 +252,7 @@ func (c *ParkingContract) QuerySpotsByLocation(ctx contractapi.TransactionContex
 
 // QuerySpotsByType returns spots by type
 func (c *ParkingContract) QuerySpotsByType(ctx contractapi.TransactionContextInterface, spotType string) ([]*ParkingSpot, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"parkingSpot","spotType":"%s"}}`, spotType)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("spot_", "spot_~")
 	if err != nil {
 		return nil, err
 	}
@@ -259,9 +268,12 @@ func (c *ParkingContract) QuerySpotsByType(ctx contractapi.TransactionContextInt
 		var spot ParkingSpot
 		err = json.Unmarshal(queryResponse.Value, &spot)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		spots = append(spots, &spot)
+		
+		if spot.DocType == "parkingSpot" && spot.SpotType == spotType {
+			spots = append(spots, &spot)
+		}
 	}
 
 	return spots, nil
@@ -269,9 +281,7 @@ func (c *ParkingContract) QuerySpotsByType(ctx contractapi.TransactionContextInt
 
 // QuerySpotsByPriceRange returns spots within a price range
 func (c *ParkingContract) QuerySpotsByPriceRange(ctx contractapi.TransactionContextInterface, minPrice, maxPrice float64) ([]*ParkingSpot, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"parkingSpot","pricePerHour":{"$gte":%f,"$lte":%f}}}`, minPrice, maxPrice)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("spot_", "spot_~")
 	if err != nil {
 		return nil, err
 	}
@@ -287,9 +297,12 @@ func (c *ParkingContract) QuerySpotsByPriceRange(ctx contractapi.TransactionCont
 		var spot ParkingSpot
 		err = json.Unmarshal(queryResponse.Value, &spot)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		spots = append(spots, &spot)
+		
+		if spot.DocType == "parkingSpot" && spot.PricePerHour >= minPrice && spot.PricePerHour <= maxPrice {
+			spots = append(spots, &spot)
+		}
 	}
 
 	return spots, nil
@@ -328,15 +341,15 @@ func (c *ParkingContract) CreateBooking(ctx contractapi.TransactionContextInterf
 	}
 
 	duration := int(endTime.Sub(startTime).Hours())
-	now := time.Now()
+	now := time.Now().Format(time.RFC3339)
 
 	booking := Booking{
 		DocType:      "booking",
 		BookingID:    bookingId,
 		UserID:       userId,
 		SpotID:       spotId,
-		StartTime:    startTime,
-		EndTime:      endTime,
+		StartTime:    startTimeStr,
+		EndTime:      endTimeStr,
 		Duration:     duration,
 		PricePerHour: spot.PricePerHour,
 		TotalCost:    totalCost,
@@ -388,7 +401,7 @@ func (c *ParkingContract) UpdateBookingStatus(ctx contractapi.TransactionContext
 	}
 
 	booking.Status = status
-	booking.UpdatedAt = time.Now()
+	booking.UpdatedAt = time.Now().Format(time.RFC3339)
 
 	bookingJSON, err := json.Marshal(booking)
 	if err != nil {
@@ -409,8 +422,8 @@ func (c *ParkingContract) CheckInBooking(ctx contractapi.TransactionContextInter
 		return fmt.Errorf("booking %s is not in confirmed status", bookingId)
 	}
 
-	now := time.Now()
-	booking.ActualCheckIn = &now
+	now := time.Now().Format(time.RFC3339)
+	booking.ActualCheckIn = now
 	booking.Status = "active"
 	booking.UpdatedAt = now
 
@@ -440,13 +453,15 @@ func (c *ParkingContract) CheckOutBooking(ctx contractapi.TransactionContextInte
 	}
 
 	now := time.Now()
-	booking.ActualCheckOut = &now
+	nowStr := now.Format(time.RFC3339)
+	booking.ActualCheckOut = nowStr
 	booking.Status = "completed"
-	booking.UpdatedAt = now
+	booking.UpdatedAt = nowStr
 
 	// Recalculate cost if overtime
-	if now.After(booking.EndTime) {
-		extraHours := int(now.Sub(booking.EndTime).Hours()) + 1
+	endTime, _ := time.Parse(time.RFC3339, booking.EndTime)
+	if now.After(endTime) {
+		extraHours := int(now.Sub(endTime).Hours()) + 1
 		booking.TotalCost += float64(extraHours) * booking.PricePerHour
 	}
 
@@ -481,10 +496,11 @@ func (c *ParkingContract) ExtendBooking(ctx contractapi.TransactionContextInterf
 		return fmt.Errorf("invalid end time format: %v", err)
 	}
 
-	booking.EndTime = newEndTime
+	startTime, _ := time.Parse(time.RFC3339, booking.StartTime)
+	booking.EndTime = newEndTimeStr
 	booking.TotalCost += additionalCost
-	booking.Duration = int(newEndTime.Sub(booking.StartTime).Hours())
-	booking.UpdatedAt = time.Now()
+	booking.Duration = int(newEndTime.Sub(startTime).Hours())
+	booking.UpdatedAt = time.Now().Format(time.RFC3339)
 
 	bookingJSON, err := json.Marshal(booking)
 	if err != nil {
@@ -506,7 +522,7 @@ func (c *ParkingContract) CancelBooking(ctx contractapi.TransactionContextInterf
 	}
 
 	booking.Status = "cancelled"
-	booking.UpdatedAt = time.Now()
+	booking.UpdatedAt = time.Now().Format(time.RFC3339)
 
 	bookingJSON, err := json.Marshal(booking)
 	if err != nil {
@@ -524,9 +540,7 @@ func (c *ParkingContract) CancelBooking(ctx contractapi.TransactionContextInterf
 
 // GetUserBookings returns all bookings for a user
 func (c *ParkingContract) GetUserBookings(ctx contractapi.TransactionContextInterface, userId string) ([]*Booking, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"booking","userId":"%s"}}`, userId)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("booking_", "booking_~")
 	if err != nil {
 		return nil, err
 	}
@@ -542,9 +556,12 @@ func (c *ParkingContract) GetUserBookings(ctx contractapi.TransactionContextInte
 		var booking Booking
 		err = json.Unmarshal(queryResponse.Value, &booking)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		bookings = append(bookings, &booking)
+		
+		if booking.DocType == "booking" && booking.UserID == userId {
+			bookings = append(bookings, &booking)
+		}
 	}
 
 	return bookings, nil
@@ -552,9 +569,7 @@ func (c *ParkingContract) GetUserBookings(ctx contractapi.TransactionContextInte
 
 // GetSpotBookings returns all bookings for a parking spot
 func (c *ParkingContract) GetSpotBookings(ctx contractapi.TransactionContextInterface, spotId string) ([]*Booking, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"booking","spotId":"%s"}}`, spotId)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("booking_", "booking_~")
 	if err != nil {
 		return nil, err
 	}
@@ -570,9 +585,12 @@ func (c *ParkingContract) GetSpotBookings(ctx contractapi.TransactionContextInte
 		var booking Booking
 		err = json.Unmarshal(queryResponse.Value, &booking)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		bookings = append(bookings, &booking)
+		
+		if booking.DocType == "booking" && booking.SpotID == spotId {
+			bookings = append(bookings, &booking)
+		}
 	}
 
 	return bookings, nil
@@ -580,9 +598,7 @@ func (c *ParkingContract) GetSpotBookings(ctx contractapi.TransactionContextInte
 
 // GetActiveBookings returns active bookings for a user
 func (c *ParkingContract) GetActiveBookings(ctx contractapi.TransactionContextInterface, userId string) ([]*Booking, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"booking","userId":"%s","status":{"$in":["confirmed","active"]}}}`, userId)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("booking_", "booking_~")
 	if err != nil {
 		return nil, err
 	}
@@ -598,9 +614,12 @@ func (c *ParkingContract) GetActiveBookings(ctx contractapi.TransactionContextIn
 		var booking Booking
 		err = json.Unmarshal(queryResponse.Value, &booking)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		bookings = append(bookings, &booking)
+		
+		if booking.DocType == "booking" && booking.UserID == userId && (booking.Status == "confirmed" || booking.Status == "active") {
+			bookings = append(bookings, &booking)
+		}
 	}
 
 	return bookings, nil
@@ -608,9 +627,7 @@ func (c *ParkingContract) GetActiveBookings(ctx contractapi.TransactionContextIn
 
 // GetBookingHistory returns completed/cancelled bookings for a user
 func (c *ParkingContract) GetBookingHistory(ctx contractapi.TransactionContextInterface, userId string) ([]*Booking, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"booking","userId":"%s","status":{"$in":["completed","cancelled"]}}}`, userId)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("booking_", "booking_~")
 	if err != nil {
 		return nil, err
 	}
@@ -626,9 +643,12 @@ func (c *ParkingContract) GetBookingHistory(ctx contractapi.TransactionContextIn
 		var booking Booking
 		err = json.Unmarshal(queryResponse.Value, &booking)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		bookings = append(bookings, &booking)
+		
+		if booking.DocType == "booking" && booking.UserID == userId && (booking.Status == "completed" || booking.Status == "cancelled") {
+			bookings = append(bookings, &booking)
+		}
 	}
 
 	return bookings, nil

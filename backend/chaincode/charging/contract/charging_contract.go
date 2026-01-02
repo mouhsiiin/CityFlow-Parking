@@ -50,6 +50,12 @@ type ChargingContract struct {
 	contractapi.Contract
 }
 
+// InitLedger initializes the chaincode
+func (c *ChargingContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
+	// Initialize ledger - no sample data needed for production
+	return nil
+}
+
 // ==================== Charging Station Management ====================
 
 // CreateChargingStation creates a new charging station

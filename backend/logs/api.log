@@ -1,0 +1,77 @@
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[GIN-debug] GET    /health                   --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api.(*Server).setupRoutes.func1 (4 handlers)
+[GIN-debug] POST   /api/v1/auth/register     --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*AuthHandler).Register-fm (4 handlers)
+[GIN-debug] POST   /api/v1/auth/login        --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*AuthHandler).Login-fm (4 handlers)
+[GIN-debug] POST   /api/v1/auth/logout       --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*AuthHandler).Logout-fm (5 handlers)
+[GIN-debug] GET    /api/v1/auth/me           --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*AuthHandler).GetCurrentUser-fm (5 handlers)
+[GIN-debug] GET    /api/v1/users/:id         --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*UserHandler).GetUser-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/users/:id         --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*UserHandler).UpdateUser-fm (5 handlers)
+[GIN-debug] DELETE /api/v1/users/:id         --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*UserHandler).DeleteUser-fm (5 handlers)
+[GIN-debug] GET    /api/v1/users             --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*UserHandler).ListAllUsers-fm (6 handlers)
+[GIN-debug] GET    /api/v1/users/:id/history --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*UserHandler).GetUserHistory-fm (5 handlers)
+[GIN-debug] GET    /api/v1/parking/spots     --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).GetAllSpots-fm (4 handlers)
+[GIN-debug] GET    /api/v1/parking/spots/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).GetSpot-fm (4 handlers)
+[GIN-debug] GET    /api/v1/parking/spots/search --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).SearchSpots-fm (4 handlers)
+[GIN-debug] GET    /api/v1/parking/spots/available --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).GetAvailableSpots-fm (4 handlers)
+[GIN-debug] POST   /api/v1/parking/spots     --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).CreateSpot-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/parking/spots/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).UpdateSpot-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/parking/spots/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).DeleteSpot-fm (6 handlers)
+[GIN-debug] POST   /api/v1/parking/reserve   --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).CreateBooking-fm (5 handlers)
+[GIN-debug] POST   /api/v1/parking/checkin   --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).CheckIn-fm (5 handlers)
+[GIN-debug] POST   /api/v1/parking/checkout  --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).CheckOut-fm (5 handlers)
+[GIN-debug] POST   /api/v1/parking/extend    --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).ExtendBooking-fm (5 handlers)
+[GIN-debug] DELETE /api/v1/parking/cancel/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).CancelBooking-fm (5 handlers)
+[GIN-debug] GET    /api/v1/parking/bookings  --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).GetUserBookings-fm (5 handlers)
+[GIN-debug] GET    /api/v1/parking/bookings/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).GetBooking-fm (5 handlers)
+[GIN-debug] GET    /api/v1/parking/bookings/active --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).GetActiveBookings-fm (5 handlers)
+[GIN-debug] GET    /api/v1/parking/bookings/history --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ParkingHandler).GetBookingHistory-fm (5 handlers)
+[GIN-debug] GET    /api/v1/charging/stations --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).GetAllStations-fm (4 handlers)
+[GIN-debug] GET    /api/v1/charging/stations/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).GetStation-fm (4 handlers)
+[GIN-debug] GET    /api/v1/charging/stations/search --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).SearchStations-fm (4 handlers)
+[GIN-debug] GET    /api/v1/charging/stations/available --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).GetAvailableStations-fm (4 handlers)
+[GIN-debug] POST   /api/v1/charging/stations --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).CreateStation-fm (6 handlers)
+[GIN-debug] PUT    /api/v1/charging/stations/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).UpdateStation-fm (6 handlers)
+[GIN-debug] DELETE /api/v1/charging/stations/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).DeleteStation-fm (6 handlers)
+[GIN-debug] POST   /api/v1/charging/start    --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).StartSession-fm (5 handlers)
+[GIN-debug] PUT    /api/v1/charging/update/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).UpdateSession-fm (5 handlers)
+[GIN-debug] POST   /api/v1/charging/stop     --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).StopSession-fm (5 handlers)
+[GIN-debug] DELETE /api/v1/charging/cancel/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).CancelSession-fm (5 handlers)
+[GIN-debug] GET    /api/v1/charging/sessions --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).GetUserSessions-fm (5 handlers)
+[GIN-debug] GET    /api/v1/charging/sessions/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).GetSession-fm (5 handlers)
+[GIN-debug] GET    /api/v1/charging/sessions/active --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).GetActiveSessions-fm (5 handlers)
+[GIN-debug] GET    /api/v1/charging/sessions/history --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).GetSessionHistory-fm (5 handlers)
+[GIN-debug] GET    /api/v1/charging/stats/energy --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*ChargingHandler).GetEnergyStats-fm (5 handlers)
+[GIN-debug] POST   /api/v1/wallet/create     --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).CreateWallet-fm (5 handlers)
+[GIN-debug] GET    /api/v1/wallet            --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).GetWallet-fm (5 handlers)
+[GIN-debug] GET    /api/v1/wallet/balance    --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).GetBalance-fm (5 handlers)
+[GIN-debug] POST   /api/v1/wallet/add-funds  --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).AddFunds-fm (5 handlers)
+[GIN-debug] GET    /api/v1/wallet/transactions --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).GetTransactions-fm (5 handlers)
+[GIN-debug] GET    /api/v1/wallet/transactions/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).GetTransaction-fm (5 handlers)
+[GIN-debug] GET    /api/v1/wallet/spending   --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).GetTotalSpent-fm (5 handlers)
+[GIN-debug] POST   /api/v1/payment/process   --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).ProcessPayment-fm (5 handlers)
+[GIN-debug] POST   /api/v1/payment/refund/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).RefundPayment-fm (5 handlers)
+[GIN-debug] GET    /api/v1/payment/receipt/:id --> github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers.(*WalletHandler).GetPaymentReceipt-fm (5 handlers)
+2026/01/02 01:11:34 Starting CityFlow Parking API server on port 8080
+[GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
+Please check https://pkg.go.dev/github.com/gin-gonic/gin#readme-don-t-trust-all-proxies for details.
+[GIN-debug] Listening and serving HTTP on :8080
+[GIN] 2026/01/02 - 01:12:38 | 200 |  133.240544ms |             ::1 | GET      "/api/v1/parking/spots"
+[GIN] 2026/01/02 - 01:13:06 | 204 |       8.152µs |   197.147.3.202 | OPTIONS  "/api/v1/auth/register"
+[GIN] 2026/01/02 - 01:13:09 | 201 |  2.714853185s |   197.147.3.202 | POST     "/api/v1/auth/register"
+[GIN] 2026/01/02 - 01:13:09 | 204 |       7.972µs |   197.147.3.202 | OPTIONS  "/api/v1/auth/login"
+[GIN] 2026/01/02 - 01:13:11 | 200 |   2.11997783s |   197.147.3.202 | POST     "/api/v1/auth/login"
+[GIN] 2026/01/02 - 01:13:11 | 204 |       8.434µs |   197.147.3.202 | OPTIONS  "/api/v1/auth/login"
+[GIN] 2026/01/02 - 01:13:13 | 200 |  2.099099829s |   197.147.3.202 | POST     "/api/v1/auth/login"
+[GIN] 2026/01/02 - 01:13:14 | 204 |       8.701µs |   197.147.3.202 | OPTIONS  "/api/v1/parking/spots"
+[GIN] 2026/01/02 - 01:13:14 | 200 |   16.422502ms |   197.147.3.202 | GET      "/api/v1/parking/spots"
+[GIN] 2026/01/02 - 01:13:14 | 204 |       7.591µs |   197.147.3.202 | OPTIONS  "/api/v1/parking/bookings"
+[GIN] 2026/01/02 - 01:13:14 | 204 |        7.02µs |   197.147.3.202 | OPTIONS  "/api/v1/parking/spots"
+[GIN] 2026/01/02 - 01:13:14 | 204 |      68.016µs |   197.147.3.202 | OPTIONS  "/api/v1/parking/bookings"
+[GIN] 2026/01/02 - 01:13:14 | 200 |    3.103194ms |   197.147.3.202 | GET      "/api/v1/parking/spots"
+[GIN] 2026/01/02 - 01:13:14 | 200 |    30.25522ms |   197.147.3.202 | GET      "/api/v1/parking/bookings"
+[GIN] 2026/01/02 - 01:13:14 | 200 |     6.17962ms |   197.147.3.202 | GET      "/api/v1/parking/bookings"

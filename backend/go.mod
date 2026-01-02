@@ -1,4 +1,4 @@
-module github.com/SecurDrgorP/cityflow-parking-backend
+module github.com/mouhsiiin/CityFlow-Parking/backend
 
 go 1.21
 

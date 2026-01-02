@@ -1,242 +1,291 @@
-# Copyright SecurDrgorP. All Rights Reserved.
+# Copyright IBM Corp. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
+
+# CityFlow Parking - Channel Configuration
 
 ################################################################################
 #   Organizations Section
 ################################################################################
 Organizations:
-    - &OrdererOrg
-        Name: OrdererOrg
-        ID: OrdererMSP
-        MSPDir: organizations/ordererOrganizations/example.com/msp
-        Policies:
-            Readers:
-                Type: Signature
-                Rule: "OR('OrdererMSP.member')"
-            Writers:
-                Type: Signature
-                Rule: "OR('OrdererMSP.member')"
-            Admins:
-                Type: Signature
-                Rule: "OR('OrdererMSP.admin')"
-        OrdererEndpoints:
-            - orderer.example.com:7050
-            - orderer2.example.com:7052
-            - orderer3.example.com:7054
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/cityflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+    OrdererEndpoints:
+      - orderer.cityflow.com:7050
 
-    - &ParkingOperator
-        Name: ParkingOperatorMSP
-        ID: ParkingOperatorMSP
-        MSPDir: organizations/peerOrganizations/org1.example.com/msp
-        Policies:
-            Readers:
-                Type: Signature
-                Rule: "OR('ParkingOperatorMSP.admin', 'ParkingOperatorMSP.peer', 'ParkingOperatorMSP.client')"
-            Writers:
-                Type: Signature
-                Rule: "OR('ParkingOperatorMSP.admin', 'ParkingOperatorMSP.client')"
-            Admins:
-                Type: Signature
-                Rule: "OR('ParkingOperatorMSP.admin')"
-            Endorsement:
-                Type: Signature
-                Rule: "OR('ParkingOperatorMSP.peer')"
-        AnchorPeers:
-            - Host: peer0.org1.example.com
-              Port: 7051
+  - &ParkingOperator
+    Name: ParkingOperatorMSP
+    ID: ParkingOperatorMSP
+    MSPDir: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/parkingoperator.cityflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('ParkingOperatorMSP.admin', 'ParkingOperatorMSP.peer', 'ParkingOperatorMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('ParkingOperatorMSP.admin', 'ParkingOperatorMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('ParkingOperatorMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('ParkingOperatorMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.parkingoperator.cityflow.com
+        Port: 7051
 
-    - &ChargingStation
-        Name: ChargingStationMSP
-        ID: ChargingStationMSP
-        MSPDir: organizations/peerOrganizations/org2.example.com/msp
-        Policies:
-            Readers:
-                Type: Signature
-                Rule: "OR('ChargingStationMSP.admin', 'ChargingStationMSP.peer', 'ChargingStationMSP.client')"
-            Writers:
-                Type: Signature
-                Rule: "OR('ChargingStationMSP.admin', 'ChargingStationMSP.client')"
-            Admins:
-                Type: Signature
-                Rule: "OR('ChargingStationMSP.admin')"
-            Endorsement:
-                Type: Signature
-                Rule: "OR('ChargingStationMSP.peer')"
-        AnchorPeers:
-            - Host: peer0.org2.example.com
-              Port: 9051
+  - &ChargingStation
+    Name: ChargingStationMSP
+    ID: ChargingStationMSP
+    MSPDir: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/chargingstation.cityflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('ChargingStationMSP.admin', 'ChargingStationMSP.peer', 'ChargingStationMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('ChargingStationMSP.admin', 'ChargingStationMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('ChargingStationMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('ChargingStationMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.chargingstation.cityflow.com
+        Port: 8051
 
-    - &UserService
-        Name: UserServiceMSP
-        ID: UserServiceMSP
-        MSPDir: organizations/peerOrganizations/org3.example.com/msp
-        Policies:
-            Readers:
-                Type: Signature
-                Rule: "OR('UserServiceMSP.admin', 'UserServiceMSP.peer', 'UserServiceMSP.client')"
-            Writers:
-                Type: Signature
-                Rule: "OR('UserServiceMSP.admin', 'UserServiceMSP.client')"
-            Admins:
-                Type: Signature
-                Rule: "OR('UserServiceMSP.admin')"
-            Endorsement:
-                Type: Signature
-                Rule: "OR('UserServiceMSP.peer')"
-        AnchorPeers:
-            - Host: peer0.org3.example.com
-              Port: 11051
+  - &UserService
+    Name: UserServiceMSP
+    ID: UserServiceMSP
+    MSPDir: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/userservice.cityflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('UserServiceMSP.admin', 'UserServiceMSP.peer', 'UserServiceMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('UserServiceMSP.admin', 'UserServiceMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('UserServiceMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('UserServiceMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.userservice.cityflow.com
+        Port: 9051
+
+  - &CityManagement
+    Name: CityManagementMSP
+    ID: CityManagementMSP
+    MSPDir: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations/citymanagement.cityflow.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('CityManagementMSP.admin', 'CityManagementMSP.peer', 'CityManagementMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('CityManagementMSP.admin', 'CityManagementMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('CityManagementMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('CityManagementMSP.peer')"
+    AnchorPeers:
+      - Host: peer0.citymanagement.cityflow.com
+        Port: 10051
 
 ################################################################################
 #   Capabilities Section
 ################################################################################
 Capabilities:
-    Channel: &ChannelCapabilities
-        V2_0: true
-    Orderer: &OrdererCapabilities
-        V2_0: true
-    Application: &ApplicationCapabilities
-        V2_5: true
+  Channel: &ChannelCapabilities
+    V2_0: true
+  Orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_0: true
 
 ################################################################################
 #   Application Section
 ################################################################################
 Application: &ApplicationDefaults
-    Organizations:
-    Policies:
-        Readers:
-            Type: ImplicitMeta
-            Rule: "ANY Readers"
-        Writers:
-            Type: ImplicitMeta
-            Rule: "ANY Writers"
-        Admins:
-            Type: ImplicitMeta
-            Rule: "MAJORITY Admins"
-        LifecycleEndorsement:
-            Type: ImplicitMeta
-            Rule: "MAJORITY Endorsement"
-        Endorsement:
-            Type: ImplicitMeta
-            Rule: "MAJORITY Endorsement"
-    Capabilities:
-        <<: *ApplicationCapabilities
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+  Capabilities:
+    <<: *ApplicationCapabilities
 
 ################################################################################
 #   Orderer Section
 ################################################################################
 Orderer: &OrdererDefaults
-    OrdererType: etcdraft
-    Addresses:
-        - orderer.example.com:7050
-        - orderer2.example.com:7052
-        - orderer3.example.com:7054
-    EtcdRaft:
-        Consenters:
-            - Host: orderer.example.com
-              Port: 7050
-              ClientTLSCert: organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
-              ServerTLSCert: organizations/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
-            - Host: orderer2.example.com
-              Port: 7052
-              ClientTLSCert: organizations/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
-              ServerTLSCert: organizations/ordererOrganizations/example.com/orderers/orderer2.example.com/tls/server.crt
-            - Host: orderer3.example.com
-              Port: 7054
-              ClientTLSCert: organizations/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
-              ServerTLSCert: organizations/ordererOrganizations/example.com/orderers/orderer3.example.com/tls/server.crt
-    BatchTimeout: 2s
-    BatchSize:
-        MaxMessageCount: 10
-        AbsoluteMaxBytes: 99 MB
-        PreferredMaxBytes: 512 KB
-    Organizations:
-    Policies:
-        Readers:
-            Type: ImplicitMeta
-            Rule: "ANY Readers"
-        Writers:
-            Type: ImplicitMeta
-            Rule: "ANY Writers"
-        Admins:
-            Type: ImplicitMeta
-            Rule: "MAJORITY Admins"
-        BlockValidation:
-            Type: ImplicitMeta
-            Rule: "ANY Writers"
-    Capabilities:
-        <<: *OrdererCapabilities
+  OrdererType: etcdraft
+  Addresses:
+    - orderer.cityflow.com:7050
+  EtcdRaft:
+    Consenters:
+      - Host: orderer.cityflow.com
+        Port: 7050
+        ClientTLSCert: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/cityflow.com/orderers/orderer.cityflow.com/tls/server.crt
+        ServerTLSCert: /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations/cityflow.com/orderers/orderer.cityflow.com/tls/server.crt
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+  Capabilities:
+    <<: *OrdererCapabilities
 
 ################################################################################
 #   Channel Section
 ################################################################################
 Channel: &ChannelDefaults
-    Policies:
-        Readers:
-            Type: ImplicitMeta
-            Rule: "ANY Readers"
-        Writers:
-            Type: ImplicitMeta
-            Rule: "ANY Writers"
-        Admins:
-            Type: ImplicitMeta
-            Rule: "MAJORITY Admins"
-    Capabilities:
-        <<: *ChannelCapabilities
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
 
 ################################################################################
 #   Profiles Section
 ################################################################################
 Profiles:
-    ThreeOrgsOrdererGenesis:
-        <<: *ChannelDefaults
-        Orderer:
-            <<: *OrdererDefaults
-            Organizations:
-                - *OrdererOrg
-        Consortiums:
-            CityFlowConsortium:
-                Organizations:
-                    - *ParkingOperator
-                    - *ChargingStation
-                    - *UserService
+  CityFlowGenesis:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *ParkingOperator
+        - *ChargingStation
+        - *UserService
+        - *CityManagement
+      Capabilities:
+        <<: *ApplicationCapabilities
 
-    UserChannel:
-        Consortium: CityFlowConsortium
-        <<: *ChannelDefaults
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-                - *ParkingOperator
-                - *ChargingStation
-                - *UserService
+  # User Channel Profile
+  UserChannel:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *UserService
+        - *ParkingOperator
+        - *ChargingStation
+      Capabilities:
+        <<: *ApplicationCapabilities
 
-    ParkingChannel:
-        Consortium: CityFlowConsortium
-        <<: *ChannelDefaults
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-                - *ParkingOperator
-                - *ChargingStation
-                - *UserService
+  # Parking Channel Profile
+  ParkingChannel:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *ParkingOperator
+        - *UserService
+        - *CityManagement
+      Capabilities:
+        <<: *ApplicationCapabilities
 
-    ChargingChannel:
-        Consortium: CityFlowConsortium
-        <<: *ChannelDefaults
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-                - *ParkingOperator
-                - *ChargingStation
-                - *UserService
+  # Charging Channel Profile
+  ChargingChannel:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *ChargingStation
+        - *UserService
+        - *CityManagement
+      Capabilities:
+        <<: *ApplicationCapabilities
 
-    WalletChannel:
-        Consortium: CityFlowConsortium
-        <<: *ChannelDefaults
-        Application:
-            <<: *ApplicationDefaults
-            Organizations:
-                - *ParkingOperator
-                - *ChargingStation
-                - *UserService
+  # Wallet Channel Profile
+  WalletChannel:
+    <<: *ChannelDefaults
+    Orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities:
+        <<: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *UserService
+        - *ParkingOperator
+        - *ChargingStation
+        - *CityManagement
+      Capabilities:
+        <<: *ApplicationCapabilities

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/fabric"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/fabric"
 )
 
 // AuthHandler handles authentication endpoints
@@ -36,6 +36,18 @@ type RegisterRequest struct {
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
+}
+
+// User represents the user structure from chaincode
+type User struct {
+	UserID       string `json:"userId"`
+	Email        string `json:"email"`
+	PasswordHash string `json:"passwordHash"`
+	FirstName    string `json:"firstName"`
+	LastName     string `json:"lastName"`
+	Phone        string `json:"phone"`
+	Role         string `json:"role"`
+	IsActive     bool   `json:"isActive"`
 }
 
 // AuthResponse represents authentication response
@@ -157,12 +169,22 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Remove password hash from response
 	user.PasswordHash = ""
-	userJSON, _ := json.Marshal(user)
+	
+	// Create response with properly formatted user
+	userResponse := map[string]interface{}{
+		"userId":    user.UserID,
+		"email":     user.Email,
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
+		"phone":     user.Phone,
+		"role":      user.Role,
+		"isActive":  user.IsActive,
+	}
 
-	c.JSON(http.StatusOK, AuthResponse{
-		Token:   token,
-		User:    userJSON,
-		Message: "Login successful",
+	c.JSON(http.StatusOK, gin.H{
+		"token":   token,
+		"user":    userResponse,
+		"message": "Login successful",
 	})
 }
 
@@ -193,5 +215,23 @@ func (h *AuthHandler) GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"user": json.RawMessage(userData.(string))})
+	// Parse the user JSON string
+	var user User
+	if err := json.Unmarshal([]byte(userData.(string)), &user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user data"})
+		return
+	}
+
+	// Return formatted user (without password hash)
+	c.JSON(http.StatusOK, gin.H{
+		"user": gin.H{
+			"userId":    user.UserID,
+			"email":     user.Email,
+			"firstName": user.FirstName,
+			"lastName":  user.LastName,
+			"phone":     user.Phone,
+			"role":      user.Role,
+			"isActive":  user.IsActive,
+		},
+	})
 }

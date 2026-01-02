@@ -159,6 +159,14 @@ export interface CreateReservationRequest {
   endTime: string;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -173,4 +181,67 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  message?: string;
+}
+
+export interface SearchSpotsParams {
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  type?: 'parking' | 'ev_charging';
+}
+
+export interface SearchStationsParams {
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  connectorType?: 'CCS' | 'CHAdeMO' | 'Type2' | 'Tesla';
+}
+
+export interface CreateBookingRequest {
+  spotId: string;
+  startTime: string;
+  endTime: string;
+}
+
+export interface CheckInRequest {
+  bookingId: string;
+}
+
+export interface CheckOutRequest {
+  bookingId: string;
+}
+
+export interface ExtendBookingRequest {
+  bookingId: string;
+  newEndTime: string;
+}
+
+export interface StartChargingRequest {
+  stationId: string;
+  vehicleId?: string;
+}
+
+export interface StopChargingRequest {
+  sessionId: string;
+}
+
+export interface UpdateChargingRequest {
+  energyConsumed?: number;
+  currentCost?: number;
+}
+
+export interface AddFundsRequest {
+  amount: number;
+}
+
+export interface ProcessPaymentRequest {
+  amount: number;
+  type: 'parking' | 'charging' | 'refund';
+  referenceId: string;
+  description: string;
+}
+
+export interface RefundPaymentRequest {
+  reason?: string;
 }

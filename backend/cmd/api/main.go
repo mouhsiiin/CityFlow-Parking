@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/api"
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/config"
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/fabric"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/api"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/config"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/fabric"
 )
 
 func main() {

@@ -1,3 +1,8 @@
+// Export the new comprehensive API service
+export { default as apiService } from './apiService';
+export * from './apiService';
+
+// Keep existing exports for backwards compatibility
 import { apiClient } from './api';
 import { API_ENDPOINTS } from '../config/api';
 import type {
@@ -26,7 +31,8 @@ import {
 } from './mockData';
 
 // Set to true to use mock data (for testing without backend)
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
+const AUTH_TOKEN_KEY = 'authToken';
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -38,10 +44,42 @@ export const authService = {
       }
       throw new Error('Invalid credentials');
     }
-    return apiClient.post<LoginResponse>(API_ENDPOINTS.LOGIN, credentials);
+    const response = await apiClient.post<{ token: string; user: any; message?: string }>(
+      API_ENDPOINTS.LOGIN,
+      credentials
+    );
+    
+    // Transform backend response to match frontend User type
+    const user: User = {
+      id: response.user.userId || response.user.id,
+      email: response.user.email,
+      firstName: response.user.firstName,
+      lastName: response.user.lastName,
+      phone: response.user.phone,
+      walletAddress: response.user.walletAddress || '0x0000000000000000000000000000000000000000',
+      balance: response.user.balance || 0,
+      role: response.user.role as 'user' | 'admin',
+      isActive: response.user.isActive,
+      createdAt: response.user.createdAt,
+      updatedAt: response.user.updatedAt,
+    };
+    
+    // Persist token immediately so subsequent requests include Authorization header
+    if (response.token) {
+      localStorage.setItem(AUTH_TOKEN_KEY, response.token);
+    }
+
+    return { token: response.token, user };
   },
 
-  async register(data: { email: string; password: string; walletAddress?: string }): Promise<LoginResponse> {
+  async register(data: { 
+    email: string; 
+    password: string; 
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    walletAddress?: string;
+  }): Promise<LoginResponse> {
     if (USE_MOCK_DATA) {
       await simulateDelay(800);
       const newUser: User = {
@@ -61,17 +99,27 @@ export const authService = {
       mockUsers.push(newUser);
       return { token: 'mock-jwt-token-' + Date.now(), user: newUser };
     }
-    return apiClient.post<LoginResponse>(API_ENDPOINTS.REGISTER, data);
+    const response = await apiClient.post<{ message: string; userId: string }>(
+      API_ENDPOINTS.REGISTER,
+      data
+    );
+    // After registration, log the user in
+    return this.login({ email: data.email, password: data.password });
   },
 
   async logout(): Promise<void> {
     if (USE_MOCK_DATA) {
       await simulateDelay(300);
-      localStorage.removeItem('authToken');
+      localStorage.removeItem(AUTH_TOKEN_KEY);
       return;
     }
-    await apiClient.post(API_ENDPOINTS.LOGOUT);
-    localStorage.removeItem('authToken');
+    try {
+      await apiClient.post(API_ENDPOINTS.LOGOUT);
+    } catch (error) {
+      // Continue with logout even if API call fails
+      console.error('Logout API call failed:', error);
+    }
+    localStorage.removeItem(AUTH_TOKEN_KEY);
   },
 
   async getProfile(): Promise<User> {
@@ -79,7 +127,23 @@ export const authService = {
       await simulateDelay(400);
       return mockUsers[0];
     }
-    return apiClient.get<User>(API_ENDPOINTS.USER_PROFILE);
+    const response = await apiClient.get<{ user: any }>(API_ENDPOINTS.CURRENT_USER);
+    const userData = response.user;
+    
+    // Transform backend response to match frontend User type
+    return {
+      id: userData.userId || userData.id,
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      phone: userData.phone,
+      walletAddress: userData.walletAddress || '0x0000000000000000000000000000000000000000',
+      balance: userData.balance || 0,
+      role: userData.role as 'user' | 'admin',
+      isActive: userData.isActive,
+      createdAt: userData.createdAt,
+      updatedAt: userData.updatedAt,
+    };
   },
 };
 
@@ -121,7 +185,7 @@ export const reservationService = {
       await simulateDelay(500);
       return mockReservations;
     }
-    return apiClient.get<Reservation[]>(API_ENDPOINTS.USER_RESERVATIONS);
+    return apiClient.get<Reservation[]>(API_ENDPOINTS.USER_BOOKINGS);
   },
 
   async createReservation(data: CreateReservationRequest): Promise<Reservation> {
@@ -164,7 +228,7 @@ export const reservationService = {
       if (!reservation) throw new Error('Reservation not found');
       return reservation;
     }
-    return apiClient.get<Reservation>(API_ENDPOINTS.RESERVATION_BY_ID(id));
+    return apiClient.get<Reservation>(API_ENDPOINTS.BOOKING_BY_ID(id));
   },
 
   async cancelReservation(id: string): Promise<ApiResponse<void>> {
@@ -178,7 +242,7 @@ export const reservationService = {
       }
       return { success: true };
     }
-    return apiClient.post<ApiResponse<void>>(API_ENDPOINTS.CANCEL_RESERVATION(id));
+    return apiClient.delete<ApiResponse<void>>(API_ENDPOINTS.CANCEL_BOOKING(id));
   },
 };
 
@@ -222,7 +286,7 @@ export const walletService = {
       mockUsers[0].balance = mockWalletInfo.balance;
       return newTransaction;
     }
-    return apiClient.post<Transaction>(API_ENDPOINTS.DEPOSIT, { amount });
+    return apiClient.post<Transaction>(API_ENDPOINTS.ADD_FUNDS, { amount });
   },
 
   async withdraw(amount: number): Promise<Transaction> {
@@ -251,7 +315,8 @@ export const walletService = {
       mockUsers[0].balance = mockWalletInfo.balance;
       return newTransaction;
     }
-    return apiClient.post<Transaction>(API_ENDPOINTS.WITHDRAW, { amount });
+    // Withdraw is not supported in the new API - use processPayment instead
+    throw new Error('Withdraw endpoint not available');
   },
 };
 
@@ -291,7 +356,7 @@ export const chargingService = {
       await simulateDelay(500);
       return mockChargingSessions;
     }
-    return apiClient.get<ChargingSession[]>(API_ENDPOINTS.CHARGING_SESSIONS);
+    return apiClient.get<ChargingSession[]>(API_ENDPOINTS.USER_SESSIONS);
   },
 
   async startSession(stationId: string): Promise<ChargingSession> {
@@ -388,7 +453,7 @@ export const blockchainService = {
         data: item ? {
           txId: item.blockchainTxHash,
           blockNumber: item.blockNumber,
-          timestamp: item.createdAt,
+          timestamp: transaction ? transaction.timestamp : (reservation?.createdAt || session?.startTime || new Date().toISOString()),
           endorsingOrgs: item.endorsingOrgs,
           type: 'type' in item ? item.type : ('spotId' in item ? 'reservation' : 'charging-session'),
           valid: true,
@@ -396,31 +461,40 @@ export const blockchainService = {
         message: item ? 'Transaction verified' : 'Transaction not found',
       };
     }
-    return apiClient.get<ApiResponse<any>>(API_ENDPOINTS.VERIFY_TRANSACTION(hash));
+    // Blockchain verification endpoints not available in current API
+    throw new Error('Blockchain verification endpoint not available');
   },
 
   async getBlockInfo(blockNumber: number): Promise<ApiResponse<any>> {
     if (USE_MOCK_DATA) {
       await simulateDelay(700);
+      const transactions = mockTransactions.filter(t => t.blockNumber === blockNumber);
+      const reservations = mockReservations.filter(r => r.blockNumber === blockNumber);
+      const sessions = mockChargingSessions.filter(s => s.blockNumber === blockNumber);
+      
       const items = [
-        ...mockTransactions.filter(t => t.blockNumber === blockNumber),
-        ...mockReservations.filter(r => r.blockNumber === blockNumber),
-        ...mockChargingSessions.filter(s => s.blockNumber === blockNumber),
+        ...transactions,
+        ...reservations,
+        ...sessions,
       ];
+      
+      // Get the first available timestamp
+      const timestamp = transactions[0]?.timestamp || reservations[0]?.createdAt || sessions[0]?.startTime || new Date().toISOString();
       
       return {
         success: true,
         data: {
           blockNumber,
           transactions: items.map(item => item.blockchainTxHash),
-          timestamp: items[0]?.createdAt || new Date().toISOString(),
+          timestamp,
           previousBlockHash: '0x' + Math.random().toString(16).substr(2, 64),
           dataHash: '0x' + Math.random().toString(16).substr(2, 64),
         },
         message: 'Block info retrieved',
       };
     }
-    return apiClient.get<ApiResponse<any>>(API_ENDPOINTS.BLOCK_INFO(blockNumber));
+    // Blockchain verification endpoints not available in current API
+    throw new Error('Block info endpoint not available');
   },
 
   async getTransactionHistory(txId: string): Promise<ApiResponse<any>> {
@@ -432,6 +506,7 @@ export const blockchainService = {
         message: 'Transaction history retrieved',
       };
     }
-    return apiClient.get<ApiResponse<any>>(API_ENDPOINTS.TRANSACTION_HISTORY(txId));
+    // Use wallet transactions endpoint instead
+    throw new Error('Transaction history endpoint not available - use walletService.getTransactions()');
   },
 };

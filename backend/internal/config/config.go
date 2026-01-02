@@ -34,12 +34,19 @@ type Config struct {
 
 // Load loads configuration from environment variables
 func Load() (*Config, error) {
+	// Determine organization to use (default to UserService for backend API)
+	orgName := getEnv("FABRIC_ORG", "userservice")
+	
+	// Get the working directory for crypto path
+	workDir, _ := os.Getwd()
+	defaultCryptoPath := workDir + "/network/crypto-config"
+	
 	cfg := &Config{
-		// Fabric settings
-		FabricMSPID:        getEnv("FABRIC_MSP_ID", "Org1MSP"),
-		FabricCryptoPath:   getEnv("FABRIC_CRYPTO_PATH", "/home/mot/blockchain/CityFlow-Parking-Backend/network/organizations"),
-		FabricPeerEndpoint: getEnv("FABRIC_PEER_ENDPOINT", "localhost:7051"),
-		FabricGatewayPeer:  getEnv("FABRIC_GATEWAY_PEER", "peer0.org1.example.com"),
+		// Fabric settings - Using UserService organization as default
+		FabricMSPID:        getEnv("FABRIC_MSP_ID", "UserServiceMSP"),
+		FabricCryptoPath:   getEnv("FABRIC_CRYPTO_PATH", defaultCryptoPath),
+		FabricPeerEndpoint: getEnv("FABRIC_PEER_ENDPOINT", "localhost:9051"),
+		FabricGatewayPeer:  getEnv("FABRIC_GATEWAY_PEER", "peer0.userservice.cityflow.com"),
 
 		// Channel names
 		UserChannel:     getEnv("USER_CHANNEL", "user-channel"),
@@ -55,13 +62,16 @@ func Load() (*Config, error) {
 
 		// Server settings
 		ServerPort: getEnv("PORT", "8080"),
-		JWTSecret:  getEnv("JWT_SECRET", "your-secret-key"),
+		JWTSecret:  getEnv("JWT_SECRET", "your-secret-key-change-in-production"),
 	}
 
-	// Set derived paths
-	cfg.FabricCertPath = cfg.FabricCryptoPath + "/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/signcerts/cert.pem"
-	cfg.FabricKeyPath = cfg.FabricCryptoPath + "/peerOrganizations/org1.example.com/users/User1@org1.example.com/msp/keystore/"
-	cfg.FabricTLSCertPath = cfg.FabricCryptoPath + "/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
+	// Set derived paths based on organization
+	// Using Admin user for backend API operations
+	orgDomain := orgName + ".cityflow.com"
+	certDir := cfg.FabricCryptoPath + "/peerOrganizations/" + orgDomain + "/users/Admin@" + orgDomain + "/msp/signcerts/"
+	cfg.FabricCertPath = certDir + "Admin@" + orgDomain + "-cert.pem"
+	cfg.FabricKeyPath = cfg.FabricCryptoPath + "/peerOrganizations/" + orgDomain + "/users/Admin@" + orgDomain + "/msp/keystore/"
+	cfg.FabricTLSCertPath = cfg.FabricCryptoPath + "/peerOrganizations/" + orgDomain + "/peers/peer0." + orgDomain + "/tls/ca.crt"
 
 	return cfg, nil
 }

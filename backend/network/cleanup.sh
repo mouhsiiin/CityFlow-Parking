@@ -1,70 +1,107 @@
 #!/bin/bash
-# Copyright SecurDrgorP. All Rights Reserved.
-# SPDX-License-Identifier: Apache-2.0
-
-# Cleanup the CityFlow Parking Hyperledger Fabric Network
+# CityFlow Parking - Cleanup Script
+# This script performs a complete cleanup of the Fabric network
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
-
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-echo -e "${YELLOW}Cleaning up CityFlow Parking Network...${NC}"
+print_status() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
 
-# Stop and remove all containers
-docker-compose down -v --remove-orphans
+print_warning() {
+    echo -e "${YELLOW}[!]${NC} $1"
+}
 
-# Remove generated crypto materials
-echo -e "${YELLOW}Removing crypto materials...${NC}"
-rm -rf organizations/peerOrganizations
-rm -rf organizations/ordererOrganizations
-rm -rf organizations/fabric-ca/org1/msp
-rm -rf organizations/fabric-ca/org1/tls-cert.pem
-rm -rf organizations/fabric-ca/org1/ca-cert.pem
-rm -rf organizations/fabric-ca/org1/IssuerPublicKey
-rm -rf organizations/fabric-ca/org1/IssuerRevocationPublicKey
-rm -rf organizations/fabric-ca/org1/fabric-ca-server.db
-rm -rf organizations/fabric-ca/org2/msp
-rm -rf organizations/fabric-ca/org2/tls-cert.pem
-rm -rf organizations/fabric-ca/org2/ca-cert.pem
-rm -rf organizations/fabric-ca/org2/IssuerPublicKey
-rm -rf organizations/fabric-ca/org2/IssuerRevocationPublicKey
-rm -rf organizations/fabric-ca/org2/fabric-ca-server.db
-rm -rf organizations/fabric-ca/org3/msp
-rm -rf organizations/fabric-ca/org3/tls-cert.pem
-rm -rf organizations/fabric-ca/org3/ca-cert.pem
-rm -rf organizations/fabric-ca/org3/IssuerPublicKey
-rm -rf organizations/fabric-ca/org3/IssuerRevocationPublicKey
-rm -rf organizations/fabric-ca/org3/fabric-ca-server.db
-rm -rf organizations/fabric-ca/ordererOrg/msp
-rm -rf organizations/fabric-ca/ordererOrg/tls-cert.pem
-rm -rf organizations/fabric-ca/ordererOrg/ca-cert.pem
-rm -rf organizations/fabric-ca/ordererOrg/IssuerPublicKey
-rm -rf organizations/fabric-ca/ordererOrg/IssuerRevocationPublicKey
-rm -rf organizations/fabric-ca/ordererOrg/fabric-ca-server.db
+echo "=========================================="
+echo "CityFlow Parking - Complete Cleanup"
+echo "=========================================="
+echo ""
+print_warning "This will remove:"
+echo "  - All Docker containers and volumes"
+echo "  - Chaincode containers and images"
+echo "  - Channel artifacts"
+echo "  - Crypto materials"
+echo "  - API logs and PID files"
+echo ""
+read -p "Are you sure you want to continue? (yes/NO): " -r
+echo
+
+if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
+    echo "Cleanup cancelled"
+    exit 0
+fi
+
+echo ""
+echo "Starting cleanup..."
+
+# Stop backend API
+if [ -f "logs/api.pid" ]; then
+    API_PID=$(cat logs/api.pid)
+    kill $API_PID 2>/dev/null || true
+    rm -f logs/api.pid
+fi
+pkill -f "bin/api" 2>/dev/null || true
+print_status "Backend API stopped"
+
+# Stop Docker containers
+cd network
+docker compose down --volumes --remove-orphans 2>/dev/null || true
+print_status "Docker containers stopped"
+
+# Remove chaincode containers
+CHAINCODE_CONTAINERS=$(docker ps -aq --filter "name=dev-peer")
+if [ ! -z "$CHAINCODE_CONTAINERS" ]; then
+    docker rm -f $CHAINCODE_CONTAINERS 2>/dev/null || true
+    print_status "Chaincode containers removed"
+fi
+
+# Remove chaincode images
+CHAINCODE_IMAGES=$(docker images -q "dev-peer*")
+if [ ! -z "$CHAINCODE_IMAGES" ]; then
+    docker rmi -f $CHAINCODE_IMAGES 2>/dev/null || true
+    print_status "Chaincode images removed"
+fi
+
+cd ..
+
+# Remove crypto materials
+rm -rf network/crypto-config
+print_status "Crypto materials removed"
 
 # Remove channel artifacts
-echo -e "${YELLOW}Removing channel artifacts...${NC}"
-rm -rf channel-artifacts/*
-rm -rf system-genesis-block
+rm -rf network/channel-artifacts
+mkdir -p network/channel-artifacts
+print_status "Channel artifacts removed"
 
-# Remove chaincode packages
-echo -e "${YELLOW}Removing chaincode packages...${NC}"
-rm -rf ../chaincode/*/vendor
-rm -f *.tar.gz
+# Remove build artifacts
+rm -f network/*.pb network/*.json
+print_status "Build artifacts removed"
 
-# Remove Docker volumes
-echo -e "${YELLOW}Removing Docker volumes...${NC}"
-docker volume prune -f
+# Remove logs
+rm -rf logs
+mkdir -p logs
+print_status "Logs removed"
 
-# Remove any leftover containers
-echo -e "${YELLOW}Removing leftover containers...${NC}"
-docker rm -f $(docker ps -aq --filter "label=service=hyperledger-fabric") 2>/dev/null || true
+# Optional: Remove Fabric binaries
+read -p "Do you also want to remove Fabric binaries? (y/N): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    rm -rf bin config
+    print_status "Fabric binaries removed"
+    print_warning "You'll need to run ./install.sh to reinstall"
+fi
 
-echo -e "${GREEN}Cleanup completed successfully!${NC}"
+echo ""
+echo "=========================================="
+print_status "Cleanup completed!"
+echo "=========================================="
+echo ""
+echo "To set up the system again:"
+echo "  1. Run: ./install.sh"
+echo "  2. Run: ./start.sh"
+echo ""

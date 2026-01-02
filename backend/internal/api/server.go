@@ -3,10 +3,10 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/config"
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/fabric"
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/api/handlers"
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/api/middleware"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/config"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/fabric"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/middleware"
 )
 
 // Server represents the API server
@@ -19,6 +19,9 @@ type Server struct {
 // NewServer creates a new API server
 func NewServer(cfg *config.Config, fabricClient *fabric.Client) *Server {
 	router := gin.Default()
+
+	// Add CORS middleware
+	router.Use(middleware.CORSMiddleware())
 
 	server := &Server{
 		router:       router,

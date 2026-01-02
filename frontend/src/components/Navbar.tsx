@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, LayoutDashboard, Wallet, LogOut } from 'lucide-react';
+import { MapPin, LayoutDashboard, Wallet, LogOut, History } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const Navbar: React.FC = () => {
@@ -15,6 +15,7 @@ export const Navbar: React.FC = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/map', icon: MapPin, label: 'Map' },
     { path: '/wallet', icon: Wallet, label: 'Wallet' },
+    { path: '/transactions', icon: History, label: 'Transactions' },
   ];
 
   return (

@@ -5,7 +5,7 @@ import { useNotification } from '../context/NotificationContext';
 import { Card, Button, BlockchainLink } from '../components';
 import { reservationService, spotService } from '../services';
 import type { Reservation, ParkingSpot } from '../types';
-import { MapPin, Calendar, Clock, DollarSign, Zap, AlertCircle } from 'lucide-react';
+import { MapPin, Calendar, Clock, DollarSign, Zap, AlertCircle, Shield, Layers } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -82,6 +82,24 @@ export const Dashboard: React.FC = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Welcome back, {user?.email}</h1>
         <p className="text-gray-600 mt-2">Manage your parking and charging reservations</p>
+      </div>
+
+      {/* Blockchain Info Banner */}
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl p-6 mb-8 shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+            <Shield className="h-8 w-8" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-xl font-bold">Blockchain-Secured Platform</h3>
+              <Layers className="h-5 w-5" />
+            </div>
+            <p className="text-purple-100 text-sm">
+              All your reservations, payments, and transactions are permanently recorded on Hyperledger Fabric blockchain with multi-organization verification
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Quick Stats */}

@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { spotService, reservationService } from '../services';
 import type { ParkingSpot } from '../types';
 import { Card, Button, Input } from '../components';
-import { MapPin, Zap, Info } from 'lucide-react';
+import { MapPin, Zap } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 
 // Fix Leaflet default icon issue with Vite

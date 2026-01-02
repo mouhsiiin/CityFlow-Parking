@@ -41,6 +41,12 @@ type UserContract struct {
 	contractapi.Contract
 }
 
+// InitLedger initializes the chaincode
+func (c *UserContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
+	// Initialize ledger - no sample data needed for production
+	return nil
+}
+
 // CreateUser creates a new user on the blockchain
 func (c *UserContract) CreateUser(ctx contractapi.TransactionContextInterface, userId, email, passwordHash, firstName, lastName, phone, role string) error {
 	// Check if user already exists
@@ -114,31 +120,39 @@ func (c *UserContract) GetUser(ctx contractapi.TransactionContextInterface, user
 	return &user, nil
 }
 
-// GetUserByEmail retrieves a user by email using CouchDB rich query
+// GetUserByEmail retrieves a user by email using composite key
 func (c *UserContract) GetUserByEmail(ctx contractapi.TransactionContextInterface, email string) (*User, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"user","email":"%s"}}`, email)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Get results iterator for email composite keys
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("email~userId", []string{email})
 	if err != nil {
 		return nil, err
 	}
 	defer resultsIterator.Close()
 
-	if resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			return nil, err
-		}
-
-		var user User
-		err = json.Unmarshal(queryResponse.Value, &user)
-		if err != nil {
-			return nil, err
-		}
-		return &user, nil
+	if !resultsIterator.HasNext() {
+		return nil, fmt.Errorf("user with email %s not found", email)
 	}
 
-	return nil, fmt.Errorf("user with email %s not found", email)
+	// Get the composite key
+	queryResponse, err := resultsIterator.Next()
+	if err != nil {
+		return nil, err
+	}
+
+	// Split the composite key to get userId
+	_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(compositeKeyParts) < 2 {
+		return nil, fmt.Errorf("invalid composite key format")
+	}
+
+	userId := compositeKeyParts[1]
+
+	// Now get the user by userId
+	return c.GetUser(ctx, userId)
 }
 
 // UpdateUser updates user information
@@ -214,37 +228,63 @@ func (c *UserContract) CreateSession(ctx contractapi.TransactionContextInterface
 	return ctx.GetStub().PutState(tokenIndexKey, []byte{0x00})
 }
 
-// GetSession retrieves a session by token
+// GetSession retrieves a session by token using composite key index
 func (c *UserContract) GetSession(ctx contractapi.TransactionContextInterface, token string) (*Session, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"session","token":"%s","isActive":true}}`, token)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Use composite key index to find session by token
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("token~sessionId", []string{token})
 	if err != nil {
 		return nil, err
 	}
 	defer resultsIterator.Close()
 
-	if resultsIterator.HasNext() {
-		queryResponse, err := resultsIterator.Next()
-		if err != nil {
-			return nil, err
-		}
-
-		var session Session
-		err = json.Unmarshal(queryResponse.Value, &session)
-		if err != nil {
-			return nil, err
-		}
-
-		// Check if session is expired
-		if time.Now().After(session.ExpiresAt) {
-			return nil, fmt.Errorf("session has expired")
-		}
-
-		return &session, nil
+	if !resultsIterator.HasNext() {
+		return nil, fmt.Errorf("session not found")
 	}
 
-	return nil, fmt.Errorf("session not found or inactive")
+	// Get the composite key
+	queryResponse, err := resultsIterator.Next()
+	if err != nil {
+		return nil, err
+	}
+
+	// Split the composite key to get sessionId
+	_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(compositeKeyParts) < 2 {
+		return nil, fmt.Errorf("invalid composite key format")
+	}
+
+	sessionId := compositeKeyParts[1]
+
+	// Get the session by sessionId
+	sessionJSON, err := ctx.GetStub().GetState(sessionId)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read session: %v", err)
+	}
+	if sessionJSON == nil {
+		return nil, fmt.Errorf("session %s does not exist", sessionId)
+	}
+
+	var session Session
+	err = json.Unmarshal(sessionJSON, &session)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if session is active
+	if !session.IsActive {
+		return nil, fmt.Errorf("session is inactive")
+	}
+
+	// Check if session is expired
+	if time.Now().After(session.ExpiresAt) {
+		return nil, fmt.Errorf("session has expired")
+	}
+
+	return &session, nil
 }
 
 // ValidateSession validates a session token and returns the associated user
@@ -391,9 +431,8 @@ func (c *UserContract) UserExists(ctx contractapi.TransactionContextInterface, u
 
 // EmailExists checks if an email is already registered
 func (c *UserContract) EmailExists(ctx contractapi.TransactionContextInterface, email string) (bool, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"user","email":"%s"}}`, email)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Get results iterator for email composite keys
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("email~userId", []string{email})
 	if err != nil {
 		return false, err
 	}

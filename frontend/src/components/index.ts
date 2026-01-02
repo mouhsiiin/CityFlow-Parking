@@ -6,3 +6,5 @@ export { BlockchainMetadata } from './BlockchainMetadata';
 export { Navbar } from './Navbar';
 export { Loading } from './Loading';
 export { ProtectedRoute } from './ProtectedRoute';
+export { TransactionDetailsModal } from './TransactionDetailsModal';
+export { BlockchainTransactionCard } from './BlockchainTransactionCard';

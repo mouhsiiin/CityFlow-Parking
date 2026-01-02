@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/config"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/config"
 )
 
 // Client wraps the Fabric Gateway client

@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
-	"github.com/SecurDrgorP/cityflow-parking-backend/internal/fabric"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/fabric"
 )
 
 // ParkingHandler handles parking spot and booking endpoints

@@ -54,6 +54,12 @@ type WalletContract struct {
 	contractapi.Contract
 }
 
+// InitLedger initializes the chaincode
+func (c *WalletContract) InitLedger(ctx contractapi.TransactionContextInterface) error {
+	// Initialize ledger - no sample data needed for production
+	return nil
+}
+
 // ==================== Wallet Management ====================
 
 // CreateWallet creates a new wallet for a user

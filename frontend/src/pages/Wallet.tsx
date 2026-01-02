@@ -1,16 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
-import { walletService } from '../services';
-import { Card, Button, Input, BlockchainLink } from '../components';
+import { walletService as apiWalletService } from '../services/apiService';
+import { Card, Button, Input, TransactionDetailsModal, BlockchainTransactionCard } from '../components';
 import type { Transaction, WalletInfo } from '../types';
 import {
   Wallet as WalletIcon,
   ArrowDownCircle,
   ArrowUpCircle,
-  Clock,
   TrendingUp,
   TrendingDown,
+  Eye,
+  Filter,
+  Download,
+  Shield,
+  Layers,
 } from 'lucide-react';
 
 export const Wallet: React.FC = () => {
@@ -18,25 +22,40 @@ export const Wallet: React.FC = () => {
   const notification = useNotification();
   const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [filterType, setFilterType] = useState<string>('all');
+  const [totalSpent, setTotalSpent] = useState<number>(0);
 
   useEffect(() => {
     loadWalletData();
   }, []);
 
+  useEffect(() => {
+    if (filterType === 'all') {
+      setFilteredTransactions(transactions);
+    } else {
+      setFilteredTransactions(transactions.filter((t) => t.type === filterType));
+    }
+  }, [filterType, transactions]);
+
   const loadWalletData = async () => {
     try {
       setIsLoading(true);
-      const [wallet, txns] = await Promise.all([
-        walletService.getWalletInfo(),
-        walletService.getTransactions(),
+      const [wallet, txns, spending] = await Promise.all([
+        apiWalletService.getWallet(),
+        apiWalletService.getTransactions(),
+        apiWalletService.getTotalSpending().catch(() => ({ totalSpent: 0 })),
       ]);
       setWalletInfo(wallet);
       setTransactions(txns);
+      setFilteredTransactions(txns);
+      setTotalSpent(spending.totalSpent);
     } catch (error) {
       console.error('Error loading wallet data:', error);
       notification.error('Failed to load wallet data', 'Please try refreshing the page');
@@ -54,10 +73,10 @@ export const Wallet: React.FC = () => {
 
     try {
       setIsProcessing(true);
-      const transaction = await walletService.deposit(amountNum);
+      await apiWalletService.addFunds({ amount: amountNum });
       notification.success(
         'Deposit successful!',
-        `Transaction Hash: ${transaction.blockchainTxHash}`
+        `Added $${amountNum.toFixed(2)} to your wallet`
       );
       setShowDepositModal(false);
       setAmount('');
@@ -84,15 +103,10 @@ export const Wallet: React.FC = () => {
 
     try {
       setIsProcessing(true);
-      const transaction = await walletService.withdraw(amountNum);
-      notification.success(
-        'Withdrawal successful!',
-        `Transaction Hash: ${transaction.blockchainTxHash}`
-      );
+      // Withdrawal is not directly supported, would need to implement via payment processing
+      notification.warning('Withdraw not available', 'Please contact support for withdrawals');
       setShowWithdrawModal(false);
       setAmount('');
-      await loadWalletData();
-      await refreshUser();
     } catch (error: any) {
       notification.error('Withdrawal failed', error.response?.data?.error || error.message || 'Please try again');
     } finally {
@@ -144,31 +158,38 @@ export const Wallet: React.FC = () => {
       </div>
 
       {/* Wallet Balance Card */}
-      <Card className="mb-8 bg-gradient-to-br from-blue-500 to-blue-700 text-white">
+      <Card className="mb-8 bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-xl">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <p className="text-blue-100 text-sm mb-1">Total Balance</p>
-            <h2 className="text-4xl font-bold">${user?.balance.toFixed(2)}</h2>
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="h-5 w-5 text-blue-200" />
+              <p className="text-blue-100 text-sm">Blockchain Wallet Balance</p>
+            </div>
+            <h2 className="text-5xl font-bold mb-2">${user?.balance.toFixed(2)}</h2>
+            <div className="flex items-center gap-2 text-sm text-blue-100">
+              <Layers className="h-4 w-4" />
+              <span>Secured by Hyperledger Fabric</span>
+            </div>
           </div>
-          <WalletIcon className="h-12 w-12 text-blue-200" />
+          <WalletIcon className="h-16 w-16 text-blue-200 opacity-50" />
         </div>
 
-        <div className="mb-4">
-          <p className="text-blue-100 text-sm">Wallet Address</p>
+        <div className="mb-4 bg-white/10 backdrop-blur-sm rounded-lg p-3">
+          <p className="text-blue-100 text-xs mb-1">Wallet Address (Blockchain ID)</p>
           <p className="font-mono text-sm break-all">{walletInfo?.address || user?.walletAddress}</p>
         </div>
 
         <div className="flex gap-3">
           <Button
             onClick={() => setShowDepositModal(true)}
-            className="flex-1 bg-blue-800 hover:bg-blue-50 hover:text-white"
+            className="flex-1 bg-white/20 hover:bg-white/30 text-white border-2 border-white/50"
           >
             <ArrowDownCircle className="mr-2 h-5 w-5" />
-            Deposit
+            Add Funds
           </Button>
           <Button
             onClick={() => setShowWithdrawModal(true)}
-            className="flex-1 bg-blue-800 text-white hover:bg-blue-900"
+            className="flex-1 bg-white/20 hover:bg-white/30 text-white border-2 border-white/50"
           >
             <ArrowUpCircle className="mr-2 h-5 w-5" />
             Withdraw
@@ -203,10 +224,7 @@ export const Wallet: React.FC = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Spent</p>
               <p className="text-xl font-semibold text-gray-900">
-                ${transactions
-                  .filter((t) => t.type === 'payment' && t.status === 'confirmed')
-                  .reduce((sum, t) => sum + t.amount, 0)
-                  .toFixed(2)}
+                ${totalSpent.toFixed(2)}
               </p>
             </div>
           </div>
@@ -226,66 +244,58 @@ export const Wallet: React.FC = () => {
       </div>
 
       {/* Transaction History */}
-      <Card title="Transaction History">
-        {transactions.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">No transactions yet</div>
-        ) : (
-          <div className="space-y-3">
-            {transactions.map((transaction) => (
-              <div
-                key={transaction.id}
-                className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+      <Card>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Shield className="h-6 w-6 text-blue-600" />
+            <h3 className="text-xl font-bold text-gray-900">Blockchain Transaction History</h3>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3 flex-1">
-                    <div className="mt-1">{getTransactionIcon(transaction.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-medium text-gray-900 capitalize">
-                          {transaction.type.replace('_', ' ')}
-                        </h4>
-                        <span
-                          className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(
-                            transaction.status
-                          )}`}
-                        >
-                          {transaction.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{transaction.description}</p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {new Date(transaction.timestamp).toLocaleString()}
-                        </span>
-                        {transaction.reservationId && (
-                          <span>Reservation: {transaction.reservationId.substring(0, 8)}...</span>
-                        )}
-                      </div>
-                      {transaction.blockchainTxHash && (
-                        <div className="mt-2">
-                          <BlockchainLink
-                            txHash={transaction.blockchainTxHash}
-                            label="View Transaction"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right ml-4">
-                    <p
-                      className={`text-lg font-semibold ${
-                        transaction.type === 'deposit' || transaction.type === 'refund'
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }`}
-                    >
-                      {transaction.type === 'deposit' || transaction.type === 'refund' ? '+' : '-'}
-                      ${transaction.amount.toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              </div>
+                <option value="all">All Transactions</option>
+                <option value="deposit">Deposits</option>
+                <option value="payment">Payments</option>
+                <option value="refund">Refunds</option>
+                <option value="credit">Credits</option>
+                <option value="debit">Debits</option>
+              </select>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={loadWalletData}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {filteredTransactions.length === 0 ? (
+          <div className="text-center py-12">
+            <WalletIcon className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500">
+              {filterType === 'all' ? 'No transactions yet' : `No ${filterType} transactions`}
+            </p>
+            <p className="text-xs text-gray-400 mt-2">
+              All transactions are recorded on the blockchain
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredTransactions.map((transaction) => (
+              <BlockchainTransactionCard
+                key={transaction.id}
+                transaction={transaction}
+                onClick={() => setSelectedTransaction(transaction)}
+              />
             ))}
           </div>
         )}
@@ -381,6 +391,14 @@ export const Wallet: React.FC = () => {
             </div>
           </Card>
         </div>
+      )}
+
+      {/* Transaction Details Modal */}
+      {selectedTransaction && (
+        <TransactionDetailsModal
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+        />
       )}
     </div>
   );

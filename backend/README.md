@@ -1,21 +1,22 @@
 # CityFlow Smart Parking & EV Charging Backend
 
-A 100% blockchain-based smart parking and EV charging management system built with Hyperledger Fabric and Go.
+A 100% blockchain-based smart parking and EV charging management system built with Hyperledger Fabric 2.5 and Go.
 
-## 🏗️ Architecture
+## 🏗️ Network Architecture
 
-This project uses a **pure blockchain architecture** - no traditional databases (Redis, PostgreSQL, MongoDB). All data, including user sessions, is stored on Hyperledger Fabric.
+This project uses a **pure blockchain architecture** with **4 organizations** in a Hyperledger Fabric network. All data is stored on-chain with no traditional databases.
 
 ### Organizations
-- **ParkingOperator (Org1)**: Manages parking spots and bookings
-- **ChargingStation (Org2)**: Manages EV charging stations and sessions
-- **UserService (Org3)**: Manages users, authentication, and wallets
+- **ParkingOperator**: Manages parking spots and bookings (peers: 7051, 7151)
+- **ChargingStation**: Manages EV charging stations and sessions (peers: 8051, 8151)
+- **UserService**: Manages users, authentication, and sessions (peers: 9051, 9151)
+- **CityManagement**: Municipal oversight and analytics (peers: 10051, 10151)
 
 ### Channels
-- `user-channel`: User management and authentication
-- `parking-channel`: Parking spot and booking management
-- `charging-channel`: EV charging station and session management
-- `wallet-channel`: Digital wallet and payment transactions
+- `user-channel`: User management and authentication (UserService, ParkingOperator, ChargingStation)
+- `parking-channel`: Parking spot and booking management (ParkingOperator, UserService, CityManagement)
+- `charging-channel`: EV charging station and session management (ChargingStation, UserService, CityManagement)
+- `wallet-channel`: Digital wallet and payment transactions (All 4 Organizations)
 
 ### Smart Contracts (Chaincode)
 1. **User Chaincode**: User registration, authentication, session management
@@ -26,7 +27,8 @@ This project uses a **pure blockchain architecture** - no traditional databases 
 ## 📁 Project Structure
 
 ```
-├── chaincode/                    # Smart contracts
+backend/
+├── chaincode/                    # Smart contracts (Go)
 │   ├── user/contract/           # User & session management
 │   ├── parking/contract/        # Parking spots & bookings
 │   ├── charging/contract/       # Charging stations & sessions
@@ -40,47 +42,98 @@ This project uses a **pure blockchain architecture** - no traditional databases 
 │   ├── config/                 # Configuration management
 │   └── fabric/                 # Fabric Gateway client
 ├── network/
+│   ├── crypto-config.yaml      # Organization structure
 │   ├── configtx.yaml           # Channel configuration
 │   ├── docker-compose.yaml     # Network deployment
-│   └── scripts/                # Deployment scripts
+│   ├── scripts/                # Deployment scripts
+│   │   ├── createChannels.sh
+│   │   └── deployChaincode.sh
+│   └── cleanup.sh              # Complete cleanup
+├── install.sh                  # One-click installation
+├── start.sh                    # Start entire system
+├── stop.sh                     # Stop system
+├── SETUP_GUIDE.md              # Detailed setup guide
+├── QUICK_REFERENCE.md          # Quick command reference
 └── Makefile                    # Build & deployment commands
 ```
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Go 1.21+
-- Docker & Docker Compose
-- Hyperledger Fabric 2.5+
-- Fabric binaries in PATH
-
-### 1. Start the Fabric Network
+### One-Command Setup
 
 ```bash
-# Clean any previous network
-make network-clean
+# Make scripts executable
+chmod +x install.sh start.sh stop.sh
 
-# Start the network (CAs, peers, orderers)
-make network-up
+# Install everything (Docker, Go, Fabric, dependencies)
+./install.sh
 
-# Create channels
-cd network/scripts && ./createChannels.sh
+# Start the entire system (network + channels + chaincode + API)
+./start.sh
 
-# Deploy chaincode
-./deployChaincode.sh
+# Access the system
+# Backend API: http://localhost:8080
+# View logs: tail -f logs/api.log
+
+# Stop the system
+./stop.sh
 ```
 
-### 2. Run the REST API
+### Manual Setup (Step by Step)
+
+#### Prerequisites
+- Ubuntu 20.04+ or similar Linux distribution
+- 8GB RAM minimum, 16GB recommended
+- 50GB free disk space
+
+#### Installation Steps
 
 ```bash
-# Build the API
-make build
+# 1. Install prerequisites
+sudo apt-get update -y
+sudo apt-get install -y curl wget git build-essential jq
 
-# Run the API
-make run
+# 2. Install Docker
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+newgrp docker
+
+# 3. Install Go 1.21+
+wget https://go.dev/dl/go1.21.5.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.21.5.linux-amd64.tar.gz
+export PATH=$PATH:/usr/local/go/bin
+
+# 4. Install Fabric binaries
+curl -sSL https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh | bash -s -- binary docker
+
+# 5. Generate crypto materials
+cd network
+../bin/cryptogen generate --config=crypto-config.yaml --output=crypto-config
+cd ..
+
+# 6. Build backend
+go build -o bin/api ./cmd/api
+
+# 7. Start network
+cd network
+docker compose up -d
+cd ..
+
+# 8. Create channels and deploy chaincode
+docker exec cli bash -c "./scripts/createChannels.sh"
+docker exec cli bash -c "./scripts/deployChaincode.sh"
+
+# 9. Start API
+./bin/api
 ```
 
-The API will be available at `http://localhost:8080`
+For detailed instructions, see [SETUP_GUIDE.md](SETUP_GUIDE.md)
+
+## 📚 Documentation
+
+- **[SETUP_GUIDE.md](SETUP_GUIDE.md)**: Comprehensive setup and configuration guide
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)**: Quick command reference
+- **[API_CONTRACT.md](../frontend/API_CONTRACT.md)**: API endpoint documentation
 
 ## 📡 API Endpoints
 
