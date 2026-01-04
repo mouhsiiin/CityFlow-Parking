@@ -157,6 +157,7 @@ export interface CreateReservationRequest {
   spotId: string;
   startTime: string;
   endTime: string;
+  totalCost?: number;
 }
 
 export interface RegisterRequest {

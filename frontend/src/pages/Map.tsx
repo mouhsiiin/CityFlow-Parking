@@ -77,15 +77,43 @@ export const Map: React.FC = () => {
       const data = await spotService.getAllSpots();
       
       // Handle both array and wrapped object responses
-      let spotsArray = Array.isArray(data)
-        ? data
-        : (data?.data && Array.isArray(data.data)
-          ? data.data
-          : (data?.spots && Array.isArray(data.spots)
-            ? data.spots
-            : []));
+      let spotsArray: any[] = [];
       
-      setSpots(spotsArray);
+      if (Array.isArray(data)) {
+        spotsArray = data;
+      } else if (data && typeof data === 'object') {
+        if ('data' in data && Array.isArray((data as any).data)) {
+          spotsArray = (data as any).data;
+        } else if ('spots' in data && Array.isArray((data as any).spots)) {
+          spotsArray = (data as any).spots;
+        }
+      }
+      
+      // Transform API response to match ParkingSpot interface
+      const transformedSpots = spotsArray.map((spot: any) => ({
+        id: spot.id || spot.spotId, // Support both formats
+        spotNumber: spot.spotNumber,
+        location: {
+          latitude: spot.location?.latitude || spot.latitude || 0,
+          longitude: spot.location?.longitude || spot.longitude || 0,
+          address: spot.location?.address || spot.location || 'Unknown',
+        },
+        type: (spot.type || spot.spotType) === 'premium' || (spot.type || spot.spotType) === 'standard' 
+          ? 'parking' 
+          : spot.type || spot.spotType, // Map spotType values to 'parking' or 'ev_charging'
+        status: spot.status || 'available',
+        pricePerHour: spot.pricePerHour || 0,
+        features: spot.features || [],
+        chargingPower: spot.chargingPower || (spot.hasEVCharging ? 7 : undefined),
+        hasEVCharging: spot.hasEVCharging || false,
+        operatorId: spot.operatorId,
+        createdAt: spot.createdAt,
+        updatedAt: spot.updatedAt,
+        txId: spot.txId,
+        blockNumber: spot.blockNumber,
+      }));
+      
+      setSpots(transformedSpots);
     } catch (error) {
       console.error('Error loading spots:', error);
       notification.error('Failed to load spots', 'Please try refreshing the page');
@@ -149,6 +177,7 @@ export const Map: React.FC = () => {
         spotId: selectedSpot.id,
         startTime: new Date(startTime).toISOString(),
         endTime: new Date(endTime).toISOString(),
+        totalCost: calculateCost(),
       });
 
       notification.success(

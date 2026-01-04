@@ -90,31 +90,36 @@ class AdminService {
 
   // ==================== Statistics ====================
   
-  async getDashboardStats() {
-    const [parkingSpots, chargingStations] = await Promise.all([
-      this.getAllParkingSpots(),
-      this.getAllChargingStations(),
-    ]);
+async getDashboardStats() {
+  const [parkingSpots, chargingStations] = await Promise.all([
+    this.getAllParkingSpots(),
+    this.getAllChargingStations(),
+  ]);
 
-    const availableParkingSpots = parkingSpots?.spots.filter(
-      (spot) => spot.status === 'available'
-    ).length;
+  // Use ?? [] to ensure you're always calling .filter on an array
+  const spots = parkingSpots?.spots ?? [];
+  const stations = chargingStations?.stations ?? [];
 
-    const availableChargingStations = chargingStations?.stations.filter(
-      (station) => station.status === 'available'
-    ).length;
+  const availableParkingSpots = spots.filter(
+    (spot) => spot.status === 'available'
+  ).length;
 
-    return {
-      totalParkingSpots: parkingSpots?.spots.length,
-      availableParkingSpots,
-      occupiedParkingSpots: parkingSpots?.spots.filter((s) => s.status === 'occupied').length,
-      totalChargingStations: chargingStations.stations.length,
-      availableChargingStations,
-      inUseChargingStations: chargingStations?.stations.filter(
-        (s) => s.status === 'in-use'
-      ).length,
-    };
-  }
+  const availableChargingStations = stations.filter(
+    (station) => station.status === 'available'
+  ).length;
+
+  return {
+    totalParkingSpots: spots.length,
+    availableParkingSpots,
+    occupiedParkingSpots: spots.filter((s) => s.status === 'occupied').length,
+    totalChargingStations: stations.length,
+    availableChargingStations,
+    inUseChargingStations: stations.filter(
+      (s) => s.status === 'in-use'
+    ).length,
+  };
 }
 
+
+}
 export const adminService = new AdminService();

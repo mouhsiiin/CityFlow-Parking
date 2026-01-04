@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -52,7 +53,7 @@ type CreateBookingRequest struct {
 	SpotID    string  `json:"spotId" binding:"required"`
 	StartTime string  `json:"startTime" binding:"required"`
 	EndTime   string  `json:"endTime" binding:"required"`
-	TotalCost float64 `json:"totalCost" binding:"required"`
+	TotalCost float64 `json:"totalCost"`
 }
 
 // ExtendBookingRequest represents extend booking request
@@ -244,6 +245,29 @@ func (h *ParkingHandler) CreateBooking(c *gin.Context) {
 
 	bookingId := "booking_" + uuid.New().String()
 	paymentId := "payment_" + uuid.New().String()
+
+	// Calculate total cost if not provided
+	if req.TotalCost == 0 {
+		// Parse timestamps
+		startTime, err1 := time.Parse(time.RFC3339, req.StartTime)
+		endTime, err2 := time.Parse(time.RFC3339, req.EndTime)
+		
+		if err1 == nil && err2 == nil {
+			// Get spot details to retrieve price per hour
+			parkingContract := h.fabricClient.GetParkingContract()
+			spotResult, err := parkingContract.EvaluateTransaction("GetParkingSpotById", req.SpotID)
+			if err == nil {
+				var spot struct {
+					PricePerHour float64 `json:"pricePerHour"`
+				}
+				json.Unmarshal(spotResult, &spot)
+				
+				// Calculate hours and total cost
+				hours := endTime.Sub(startTime).Hours()
+				req.TotalCost = hours * spot.PricePerHour
+			}
+		}
+	}
 
 	// Process payment first
 	walletContract := h.fabricClient.GetWalletContract()

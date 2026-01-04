@@ -344,20 +344,22 @@ func (c *ParkingContract) CreateBooking(ctx contractapi.TransactionContextInterf
 	now := time.Now().Format(time.RFC3339)
 
 	booking := Booking{
-		DocType:      "booking",
-		BookingID:    bookingId,
-		UserID:       userId,
-		SpotID:       spotId,
-		StartTime:    startTimeStr,
-		EndTime:      endTimeStr,
-		Duration:     duration,
-		PricePerHour: spot.PricePerHour,
-		TotalCost:    totalCost,
-		Status:       "confirmed",
-		QRCode:       fmt.Sprintf("QR_%s_%s", bookingId, spotId),
-		PaymentID:    paymentId,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		DocType:        "booking",
+		BookingID:      bookingId,
+		UserID:         userId,
+		SpotID:         spotId,
+		StartTime:      startTimeStr,
+		EndTime:        endTimeStr,
+		ActualCheckIn:  "",
+		ActualCheckOut: "",
+		Duration:       duration,
+		PricePerHour:   spot.PricePerHour,
+		TotalCost:      totalCost,
+		Status:         "confirmed",
+		QRCode:         fmt.Sprintf("QR_%s_%s", bookingId, spotId),
+		PaymentID:      paymentId,
+		CreatedAt:      now,
+		UpdatedAt:      now,
 	}
 
 	bookingJSON, err := json.Marshal(booking)
