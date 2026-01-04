@@ -28,21 +28,21 @@ type ChargingStation struct {
 
 // ChargingSession represents an EV charging session
 type ChargingSession struct {
-	DocType        string     `json:"docType"`
-	SessionID      string     `json:"sessionId"`
-	UserID         string     `json:"userId"`
-	StationID      string     `json:"stationId"`
-	StartTime      time.Time  `json:"startTime"`
-	EndTime        *time.Time `json:"endTime,omitempty"`
-	Duration       int        `json:"duration"` // minutes
-	EnergyConsumed float64    `json:"energyConsumed"` // kWh
-	PricePerKwh    float64    `json:"pricePerKwh"`
-	CurrentCost    float64    `json:"currentCost"`
-	TotalCost      float64    `json:"totalCost"`
-	Status         string     `json:"status"` // starting, active, completed, cancelled
-	PaymentID      string     `json:"paymentId"`
-	CreatedAt      time.Time  `json:"createdAt"`
-	UpdatedAt      time.Time  `json:"updatedAt"`
+	DocType        string    `json:"docType"`
+	SessionID      string    `json:"sessionId"`
+	UserID         string    `json:"userId"`
+	StationID      string    `json:"stationId"`
+	StartTime      time.Time `json:"startTime"`
+	EndTime        time.Time `json:"endTime"`
+	Duration       int       `json:"duration"` // minutes
+	EnergyConsumed float64   `json:"energyConsumed"` // kWh
+	PricePerKwh    float64   `json:"pricePerKwh"`
+	CurrentCost    float64   `json:"currentCost"`
+	TotalCost      float64   `json:"totalCost"`
+	Status         string    `json:"status"` // starting, active, completed, cancelled
+	PaymentID      string    `json:"paymentId"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
 // ChargingContract provides functions for managing charging stations and sessions
@@ -162,15 +162,14 @@ func (c *ChargingContract) DeleteChargingStation(ctx contractapi.TransactionCont
 
 // GetAllChargingStations returns all charging stations
 func (c *ChargingContract) GetAllChargingStations(ctx contractapi.TransactionContextInterface) ([]*ChargingStation, error) {
-	queryString := `{"selector":{"docType":"chargingStation"}}`
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Use key range query instead of rich query for LevelDB compatibility
+	resultsIterator, err := ctx.GetStub().GetStateByRange("station_", "station_~")
 	if err != nil {
 		return nil, err
 	}
 	defer resultsIterator.Close()
 
-	var stations []*ChargingStation
+	stations := make([]*ChargingStation, 0) // Initialize as empty array instead of nil
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
@@ -180,9 +179,13 @@ func (c *ChargingContract) GetAllChargingStations(ctx contractapi.TransactionCon
 		var station ChargingStation
 		err = json.Unmarshal(queryResponse.Value, &station)
 		if err != nil {
-			return nil, err
+			continue // Skip invalid records
 		}
-		stations = append(stations, &station)
+		
+		// Verify it's a charging station
+		if station.DocType == "chargingStation" {
+			stations = append(stations, &station)
+		}
 	}
 
 	return stations, nil
@@ -190,15 +193,13 @@ func (c *ChargingContract) GetAllChargingStations(ctx contractapi.TransactionCon
 
 // GetAvailableStations returns available charging stations at a location
 func (c *ChargingContract) GetAvailableStations(ctx contractapi.TransactionContextInterface, location string) ([]*ChargingStation, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"chargingStation","location":"%s","status":"available"}}`, location)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("station_", "station_~")
 	if err != nil {
 		return nil, err
 	}
 	defer resultsIterator.Close()
 
-	var stations []*ChargingStation
+	stations := make([]*ChargingStation, 0)
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
@@ -208,9 +209,12 @@ func (c *ChargingContract) GetAvailableStations(ctx contractapi.TransactionConte
 		var station ChargingStation
 		err = json.Unmarshal(queryResponse.Value, &station)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		stations = append(stations, &station)
+		
+		if station.DocType == "chargingStation" && station.Location == location && station.Status == "available" {
+			stations = append(stations, &station)
+		}
 	}
 
 	return stations, nil
@@ -218,15 +222,13 @@ func (c *ChargingContract) GetAvailableStations(ctx contractapi.TransactionConte
 
 // QueryStationsByLocation returns stations by location
 func (c *ChargingContract) QueryStationsByLocation(ctx contractapi.TransactionContextInterface, location string) ([]*ChargingStation, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"chargingStation","location":"%s"}}`, location)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("station_", "station_~")
 	if err != nil {
 		return nil, err
 	}
 	defer resultsIterator.Close()
 
-	var stations []*ChargingStation
+	stations := make([]*ChargingStation, 0)
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
@@ -236,9 +238,12 @@ func (c *ChargingContract) QueryStationsByLocation(ctx contractapi.TransactionCo
 		var station ChargingStation
 		err = json.Unmarshal(queryResponse.Value, &station)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		stations = append(stations, &station)
+		
+		if station.DocType == "chargingStation" && station.Location == location {
+			stations = append(stations, &station)
+		}
 	}
 
 	return stations, nil
@@ -246,15 +251,13 @@ func (c *ChargingContract) QueryStationsByLocation(ctx contractapi.TransactionCo
 
 // QueryStationsByPowerOutput returns stations within a power output range
 func (c *ChargingContract) QueryStationsByPowerOutput(ctx contractapi.TransactionContextInterface, minPower, maxPower int) ([]*ChargingStation, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"chargingStation","powerOutput":{"$gte":%d,"$lte":%d}}}`, minPower, maxPower)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("station_", "station_~")
 	if err != nil {
 		return nil, err
 	}
 	defer resultsIterator.Close()
 
-	var stations []*ChargingStation
+	stations := make([]*ChargingStation, 0)
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
@@ -264,9 +267,12 @@ func (c *ChargingContract) QueryStationsByPowerOutput(ctx contractapi.Transactio
 		var station ChargingStation
 		err = json.Unmarshal(queryResponse.Value, &station)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		stations = append(stations, &station)
+		
+		if station.DocType == "chargingStation" && station.PowerOutput >= minPower && station.PowerOutput <= maxPower {
+			stations = append(stations, &station)
+		}
 	}
 
 	return stations, nil
@@ -274,15 +280,13 @@ func (c *ChargingContract) QueryStationsByPowerOutput(ctx contractapi.Transactio
 
 // QueryStationsByConnectorType returns stations by connector type
 func (c *ChargingContract) QueryStationsByConnectorType(ctx contractapi.TransactionContextInterface, connectorType string) ([]*ChargingStation, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"chargingStation","connectorType":"%s"}}`, connectorType)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	resultsIterator, err := ctx.GetStub().GetStateByRange("station_", "station_~")
 	if err != nil {
 		return nil, err
 	}
 	defer resultsIterator.Close()
 
-	var stations []*ChargingStation
+	stations := make([]*ChargingStation, 0)
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
@@ -292,9 +296,12 @@ func (c *ChargingContract) QueryStationsByConnectorType(ctx contractapi.Transact
 		var station ChargingStation
 		err = json.Unmarshal(queryResponse.Value, &station)
 		if err != nil {
-			return nil, err
+			continue
 		}
-		stations = append(stations, &station)
+		
+		if station.DocType == "chargingStation" && station.ConnectorType == connectorType {
+			stations = append(stations, &station)
+		}
 	}
 
 	return stations, nil
@@ -409,7 +416,7 @@ func (c *ChargingContract) StopChargingSession(ctx contractapi.TransactionContex
 	}
 
 	now := time.Now()
-	session.EndTime = &now
+	session.EndTime = now
 	session.EnergyConsumed = totalEnergy
 	session.TotalCost = totalEnergy * session.PricePerKwh
 	session.Duration = int(now.Sub(session.StartTime).Minutes())
@@ -448,7 +455,7 @@ func (c *ChargingContract) CancelSession(ctx contractapi.TransactionContextInter
 	}
 
 	now := time.Now()
-	session.EndTime = &now
+	session.EndTime = now
 	session.Status = "cancelled"
 	session.UpdatedAt = now
 
@@ -476,7 +483,7 @@ func (c *ChargingContract) GetUserSessions(ctx contractapi.TransactionContextInt
 	}
 	defer resultsIterator.Close()
 
-	var sessions []*ChargingSession
+	sessions := make([]*ChargingSession, 0)
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
@@ -504,7 +511,7 @@ func (c *ChargingContract) GetStationSessions(ctx contractapi.TransactionContext
 	}
 	defer resultsIterator.Close()
 
-	var sessions []*ChargingSession
+	sessions := make([]*ChargingSession, 0)
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
@@ -532,7 +539,7 @@ func (c *ChargingContract) GetActiveSessions(ctx contractapi.TransactionContextI
 	}
 	defer resultsIterator.Close()
 
-	var sessions []*ChargingSession
+	sessions := make([]*ChargingSession, 0)
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {
@@ -560,7 +567,7 @@ func (c *ChargingContract) GetSessionHistory(ctx contractapi.TransactionContextI
 	}
 	defer resultsIterator.Close()
 
-	var sessions []*ChargingSession
+	sessions := make([]*ChargingSession, 0)
 	for resultsIterator.HasNext() {
 		queryResponse, err := resultsIterator.Next()
 		if err != nil {

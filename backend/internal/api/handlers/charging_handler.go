@@ -161,7 +161,16 @@ func (h *ChargingHandler) GetAllStations(c *gin.Context) {
 	contract := h.fabricClient.GetChargingContract()
 	result, err := contract.EvaluateTransaction("GetAllChargingStations")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Printf("GetAllChargingStations error: %v\n", err)
+		// Check if it's a LevelDB vs CouchDB issue
+		if fmt.Sprintf("%v", err) != "" {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to retrieve charging stations. Ensure the chaincode supports your database type (LevelDB requires GetStateByRange, not GetQueryResult).",
+				"details": err.Error(),
+			})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 

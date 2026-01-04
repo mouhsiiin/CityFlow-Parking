@@ -74,11 +74,11 @@ func (s *Server) setupRoutes() {
 		// Parking spot routes
 		parking := v1.Group("/parking")
 		{
-			// Public routes
-			parking.GET("/spots", parkingHandler.GetAllSpots)
-			parking.GET("/spots/:id", parkingHandler.GetSpot)
+			// Public routes - specific routes BEFORE parameterized routes
 			parking.GET("/spots/search", parkingHandler.SearchSpots)
 			parking.GET("/spots/available", parkingHandler.GetAvailableSpots)
+			parking.GET("/spots", parkingHandler.GetAllSpots)
+			parking.GET("/spots/:id", parkingHandler.GetSpot)
 
 			// Protected routes
 			protected := parking.Group("")
@@ -107,11 +107,11 @@ func (s *Server) setupRoutes() {
 		// Charging station routes
 		charging := v1.Group("/charging")
 		{
-			// Public routes
-			charging.GET("/stations", chargingHandler.GetAllStations)
-			charging.GET("/stations/:id", chargingHandler.GetStation)
+			// Public routes - specific routes BEFORE parameterized routes
 			charging.GET("/stations/search", chargingHandler.SearchStations)
 			charging.GET("/stations/available", chargingHandler.GetAvailableStations)
+			charging.GET("/stations", chargingHandler.GetAllStations)
+			charging.GET("/stations/:id", chargingHandler.GetStation)
 
 			// Protected routes
 			protected := charging.Group("")

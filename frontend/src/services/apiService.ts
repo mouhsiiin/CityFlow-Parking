@@ -242,11 +242,25 @@ export const chargingSessionService = {
 // ==================== WALLET SERVICES ====================
 export const walletService = {
   createWallet: async (): Promise<WalletInfo> => {
-    return apiClient.post<WalletInfo>(API_ENDPOINTS.CREATE_WALLET);
+    const response = await apiClient.post<{ walletId: string; message: string }>(API_ENDPOINTS.CREATE_WALLET);
+    // After creating, fetch the wallet details
+    return walletService.getWallet();
   },
 
   getWallet: async (): Promise<WalletInfo> => {
-    return apiClient.get<WalletInfo>(API_ENDPOINTS.WALLET);
+    const response = await apiClient.get<{ wallet: any }>(API_ENDPOINTS.WALLET);
+    const wallet = response.wallet;
+    
+    // Map blockchain wallet structure to frontend WalletInfo
+    return {
+      id: wallet.walletId,
+      userId: wallet.userId,
+      address: wallet.walletId, // Use walletId as address
+      balance: wallet.balance || 0,
+      currency: wallet.currency || 'USD',
+      createdAt: wallet.createdAt,
+      lastUpdated: wallet.lastUpdated,
+    };
   },
 
   getBalance: async (): Promise<{ balance: number }> => {
@@ -258,15 +272,49 @@ export const walletService = {
   },
 
   getTransactions: async (): Promise<Transaction[]> => {
-    return apiClient.get<Transaction[]>(API_ENDPOINTS.WALLET_TRANSACTIONS);
+    const response = await apiClient.get<{ transactions: any[] }>(API_ENDPOINTS.WALLET_TRANSACTIONS);
+    const transactions = response.transactions || [];
+    
+    // Map blockchain transaction structure to frontend Transaction type
+    return transactions.map((tx: any) => ({
+      id: tx.transactionId || tx.id,
+      userId: tx.userId,
+      walletId: tx.walletId,
+      type: tx.type,
+      amount: tx.amount,
+      description: tx.description || '',
+      timestamp: tx.timestamp,
+      balanceBefore: tx.balanceBefore,
+      balanceAfter: tx.balanceAfter,
+      status: 'completed',
+    }));
   },
 
   getTransaction: async (transactionId: string): Promise<Transaction> => {
-    return apiClient.get<Transaction>(API_ENDPOINTS.WALLET_TRANSACTION_BY_ID(transactionId));
+    const response = await apiClient.get<{ transaction: any }>(API_ENDPOINTS.WALLET_TRANSACTION_BY_ID(transactionId));
+    const tx = response.transaction;
+    
+    return {
+      id: tx.transactionId || tx.id,
+      userId: tx.userId,
+      walletId: tx.walletId,
+      type: tx.type,
+      amount: tx.amount,
+      description: tx.description || '',
+      timestamp: tx.timestamp,
+      balanceBefore: tx.balanceBefore,
+      balanceAfter: tx.balanceAfter,
+      status: 'completed',
+    };
   },
 
   getTotalSpending: async (): Promise<{ totalSpent: number }> => {
-    return apiClient.get<{ totalSpent: number }>(API_ENDPOINTS.TOTAL_SPENDING);
+    const response = await apiClient.get<{ totalSpent: string | number }>(API_ENDPOINTS.TOTAL_SPENDING);
+    const totalSpent = typeof response.totalSpent === 'string' 
+      ? parseFloat(response.totalSpent) 
+      : response.totalSpent;
+    
+    return { totalSpent: totalSpent || 0 };
   },
 };
 

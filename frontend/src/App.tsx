@@ -2,8 +2,20 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminRoute } from './components/AdminRoute';
 import { Navbar } from './components';
-import { Login, Dashboard, Map, Wallet, TransactionHistory } from './pages';
+import { 
+  Login, 
+  Dashboard, 
+  Map, 
+  Wallet, 
+  TransactionHistory,
+  AdminDashboard,
+  ParkingManagement,
+  ChargingManagement,
+  ParkingSpotForm,
+  ChargingStationForm
+} from './pages';
 
 function App() {
   return (
@@ -49,6 +61,71 @@ function App() {
                 <Navbar />
                 <TransactionHistory />
               </ProtectedRoute>
+            }
+          />
+
+          {/* Admin routes */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <Navbar />
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/parking"
+            element={
+              <AdminRoute>
+                <Navbar />
+                <ParkingManagement />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/parking/create"
+            element={
+              <AdminRoute>
+                <Navbar />
+                <ParkingSpotForm />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/parking/edit/:id"
+            element={
+              <AdminRoute>
+                <Navbar />
+                <ParkingSpotForm />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/charging"
+            element={
+              <AdminRoute>
+                <Navbar />
+                <ChargingManagement />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/charging/create"
+            element={
+              <AdminRoute>
+                <Navbar />
+                <ChargingStationForm />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/charging/edit/:id"
+            element={
+              <AdminRoute>
+                <Navbar />
+                <ChargingStationForm />
+              </AdminRoute>
             }
           />
 

@@ -30,6 +30,7 @@ type RegisterRequest struct {
 	FirstName string `json:"firstName" binding:"required"`
 	LastName  string `json:"lastName" binding:"required"`
 	Phone     string `json:"phone"`
+	Role      string `json:"role"`
 }
 
 // LoginRequest represents login request
@@ -75,6 +76,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	// Generate user ID
 	userId := "user_" + uuid.New().String()
 
+	// Set default role if not provided
+	userRole := req.Role
+	if userRole == "" {
+		userRole = "user"
+	}
+
+	// Validate role - only allow user or admin
+	if userRole != "user" && userRole != "admin" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid role. Must be 'user' or 'admin'"})
+		return
+	}
+
 	// Create user on blockchain
 	contract := h.fabricClient.GetUserContract()
 	_, err = contract.SubmitTransaction(
@@ -85,7 +98,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		req.FirstName,
 		req.LastName,
 		req.Phone,
-		"user", // default role
+		userRole,
 	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -103,9 +116,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "User registered successfully",
+		"role":    userRole,
 		"userId":  userId,
 	})
 }
+
+
+
 
 // Login handles user login
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -130,6 +147,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		PasswordHash string `json:"passwordHash"`
 		FirstName    string `json:"firstName"`
 		LastName     string `json:"lastName"`
+		Phone        string `json:"phone"`
 		Role         string `json:"role"`
 		IsActive     bool   `json:"isActive"`
 	}

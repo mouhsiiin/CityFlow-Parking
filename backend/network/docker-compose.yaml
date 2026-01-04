@@ -2,13 +2,9 @@
 volumes:
   orderer.cityflow.com:
   peer0.parkingoperator.cityflow.com:
-  peer1.parkingoperator.cityflow.com:
   peer0.chargingstation.cityflow.com:
-  peer1.chargingstation.cityflow.com:
   peer0.userservice.cityflow.com:
-  peer1.userservice.cityflow.com:
   peer0.citymanagement.cityflow.com:
-  peer1.citymanagement.cityflow.com:
 
 networks:
   cityflow:
@@ -76,7 +72,6 @@ services:
       - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
       - CORE_PEER_CHAINCODEADDRESS=peer0.parkingoperator.cityflow.com:7052
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.parkingoperator.cityflow.com:7151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.parkingoperator.cityflow.com:7051
       - CORE_PEER_LOCALMSPID=ParkingOperatorMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
@@ -94,44 +89,6 @@ services:
     ports:
       - 7051:7051
       - 9443:9443
-    networks:
-      - cityflow
-
-  peer1.parkingoperator.cityflow.com:
-    container_name: peer1.parkingoperator.cityflow.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=cityflow_network
-      - FABRIC_LOGGING_SPEC=INFO
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_PROFILE_ENABLED=false
-      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-      - CORE_PEER_ID=peer1.parkingoperator.cityflow.com
-      - CORE_PEER_ADDRESS=peer1.parkingoperator.cityflow.com:7151
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:7151
-      - CORE_PEER_CHAINCODEADDRESS=peer1.parkingoperator.cityflow.com:7152
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.parkingoperator.cityflow.com:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.parkingoperator.cityflow.com:7151
-      - CORE_PEER_LOCALMSPID=ParkingOperatorMSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:9444
-      - CORE_METRICS_PROVIDER=prometheus
-      - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer1parkingoperator"}
-      - CORE_CHAINCODE_EXECUTETIMEOUT=300s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-    command: peer node start
-    volumes:
-      - /var/run/docker.sock:/host/var/run/docker.sock
-      - ./crypto-config/peerOrganizations/parkingoperator.cityflow.com/peers/peer1.parkingoperator.cityflow.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/parkingoperator.cityflow.com/peers/peer1.parkingoperator.cityflow.com/tls:/etc/hyperledger/fabric/tls
-      - peer1.parkingoperator.cityflow.com:/var/hyperledger/production
-    ports:
-      - 7151:7151
-      - 9444:9444
     networks:
       - cityflow
 
@@ -155,7 +112,6 @@ services:
       - CORE_PEER_LISTENADDRESS=0.0.0.0:8051
       - CORE_PEER_CHAINCODEADDRESS=peer0.chargingstation.cityflow.com:8052
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.chargingstation.cityflow.com:8151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.chargingstation.cityflow.com:8051
       - CORE_PEER_LOCALMSPID=ChargingStationMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
@@ -173,44 +129,6 @@ services:
     ports:
       - 8051:8051
       - 9445:9445
-    networks:
-      - cityflow
-
-  peer1.chargingstation.cityflow.com:
-    container_name: peer1.chargingstation.cityflow.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=cityflow_network
-      - FABRIC_LOGGING_SPEC=INFO
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_PROFILE_ENABLED=false
-      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-      - CORE_PEER_ID=peer1.chargingstation.cityflow.com
-      - CORE_PEER_ADDRESS=peer1.chargingstation.cityflow.com:8151
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:8151
-      - CORE_PEER_CHAINCODEADDRESS=peer1.chargingstation.cityflow.com:8152
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:8152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.chargingstation.cityflow.com:8051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.chargingstation.cityflow.com:8151
-      - CORE_PEER_LOCALMSPID=ChargingStationMSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:9446
-      - CORE_METRICS_PROVIDER=prometheus
-      - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer1chargingstation"}
-      - CORE_CHAINCODE_EXECUTETIMEOUT=300s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-    command: peer node start
-    volumes:
-      - /var/run/docker.sock:/host/var/run/docker.sock
-      - ./crypto-config/peerOrganizations/chargingstation.cityflow.com/peers/peer1.chargingstation.cityflow.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/chargingstation.cityflow.com/peers/peer1.chargingstation.cityflow.com/tls:/etc/hyperledger/fabric/tls
-      - peer1.chargingstation.cityflow.com:/var/hyperledger/production
-    ports:
-      - 8151:8151
-      - 9446:9446
     networks:
       - cityflow
 
@@ -234,7 +152,6 @@ services:
       - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
       - CORE_PEER_CHAINCODEADDRESS=peer0.userservice.cityflow.com:9052
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.userservice.cityflow.com:9151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.userservice.cityflow.com:9051
       - CORE_PEER_LOCALMSPID=UserServiceMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
@@ -252,44 +169,6 @@ services:
     ports:
       - 9051:9051
       - 9447:9447
-    networks:
-      - cityflow
-
-  peer1.userservice.cityflow.com:
-    container_name: peer1.userservice.cityflow.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=cityflow_network
-      - FABRIC_LOGGING_SPEC=INFO
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_PROFILE_ENABLED=false
-      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-      - CORE_PEER_ID=peer1.userservice.cityflow.com
-      - CORE_PEER_ADDRESS=peer1.userservice.cityflow.com:9151
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:9151
-      - CORE_PEER_CHAINCODEADDRESS=peer1.userservice.cityflow.com:9152
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.userservice.cityflow.com:9051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.userservice.cityflow.com:9151
-      - CORE_PEER_LOCALMSPID=UserServiceMSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:9448
-      - CORE_METRICS_PROVIDER=prometheus
-      - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer1userservice"}
-      - CORE_CHAINCODE_EXECUTETIMEOUT=300s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-    command: peer node start
-    volumes:
-      - /var/run/docker.sock:/host/var/run/docker.sock
-      - ./crypto-config/peerOrganizations/userservice.cityflow.com/peers/peer1.userservice.cityflow.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/userservice.cityflow.com/peers/peer1.userservice.cityflow.com/tls:/etc/hyperledger/fabric/tls
-      - peer1.userservice.cityflow.com:/var/hyperledger/production
-    ports:
-      - 9151:9151
-      - 9448:9448
     networks:
       - cityflow
 
@@ -313,7 +192,6 @@ services:
       - CORE_PEER_LISTENADDRESS=0.0.0.0:10051
       - CORE_PEER_CHAINCODEADDRESS=peer0.citymanagement.cityflow.com:10052
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:10052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.citymanagement.cityflow.com:10151
       - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.citymanagement.cityflow.com:10051
       - CORE_PEER_LOCALMSPID=CityManagementMSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
@@ -331,44 +209,6 @@ services:
     ports:
       - 10051:10051
       - 9449:9449
-    networks:
-      - cityflow
-
-  peer1.citymanagement.cityflow.com:
-    container_name: peer1.citymanagement.cityflow.com
-    image: hyperledger/fabric-peer:2.5
-    environment:
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=cityflow_network
-      - FABRIC_LOGGING_SPEC=INFO
-      - CORE_PEER_TLS_ENABLED=true
-      - CORE_PEER_PROFILE_ENABLED=false
-      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
-      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
-      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-      - CORE_PEER_ID=peer1.citymanagement.cityflow.com
-      - CORE_PEER_ADDRESS=peer1.citymanagement.cityflow.com:10151
-      - CORE_PEER_LISTENADDRESS=0.0.0.0:10151
-      - CORE_PEER_CHAINCODEADDRESS=peer1.citymanagement.cityflow.com:10152
-      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:10152
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.citymanagement.cityflow.com:10051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.citymanagement.cityflow.com:10151
-      - CORE_PEER_LOCALMSPID=CityManagementMSP
-      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:9450
-      - CORE_METRICS_PROVIDER=prometheus
-      - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer1citymanagement"}
-      - CORE_CHAINCODE_EXECUTETIMEOUT=300s
-    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
-    command: peer node start
-    volumes:
-      - /var/run/docker.sock:/host/var/run/docker.sock
-      - ./crypto-config/peerOrganizations/citymanagement.cityflow.com/peers/peer1.citymanagement.cityflow.com/msp:/etc/hyperledger/fabric/msp
-      - ./crypto-config/peerOrganizations/citymanagement.cityflow.com/peers/peer1.citymanagement.cityflow.com/tls:/etc/hyperledger/fabric/tls
-      - peer1.citymanagement.cityflow.com:/var/hyperledger/production
-    ports:
-      - 10151:10151
-      - 9450:9450
     networks:
       - cityflow
 
@@ -407,12 +247,8 @@ services:
     depends_on:
       - orderer.cityflow.com
       - peer0.parkingoperator.cityflow.com
-      - peer1.parkingoperator.cityflow.com
       - peer0.chargingstation.cityflow.com
-      - peer1.chargingstation.cityflow.com
       - peer0.userservice.cityflow.com
-      - peer1.userservice.cityflow.com
       - peer0.citymanagement.cityflow.com
-      - peer1.citymanagement.cityflow.com
     networks:
       - cityflow

@@ -75,7 +75,17 @@ export const Map: React.FC = () => {
     try {
       setIsLoading(true);
       const data = await spotService.getAllSpots();
-      setSpots(data);
+      
+      // Handle both array and wrapped object responses
+      let spotsArray = Array.isArray(data)
+        ? data
+        : (data?.data && Array.isArray(data.data)
+          ? data.data
+          : (data?.spots && Array.isArray(data.spots)
+            ? data.spots
+            : []));
+      
+      setSpots(spotsArray);
     } catch (error) {
       console.error('Error loading spots:', error);
       notification.error('Failed to load spots', 'Please try refreshing the page');

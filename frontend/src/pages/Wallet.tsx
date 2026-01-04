@@ -47,11 +47,36 @@ export const Wallet: React.FC = () => {
   const loadWalletData = async () => {
     try {
       setIsLoading(true);
-      const [wallet, txns, spending] = await Promise.all([
-        apiWalletService.getWallet(),
-        apiWalletService.getTransactions(),
+      
+      // Try to get wallet, create if doesn't exist
+      let wallet: WalletInfo;
+      try {
+        wallet = await apiWalletService.getWallet();
+      } catch (error: any) {
+        // If wallet not found (404), create one
+        if (error.response?.status === 404 || error.message?.includes('Wallet not found')) {
+          notification.info('Creating wallet', 'Setting up your wallet for the first time...');
+          try {
+            wallet = await apiWalletService.createWallet();
+            notification.success('Wallet created!', 'Your wallet has been set up successfully');
+          } catch (createError: any) {
+            // If error is "user already has wallet", retry getting it
+            if (createError.response?.data?.error?.includes('already has a wallet')) {
+              wallet = await apiWalletService.getWallet();
+            } else {
+              throw createError;
+            }
+          }
+        } else {
+          throw error;
+        }
+      }
+      
+      const [txns, spending] = await Promise.all([
+        apiWalletService.getTransactions().catch(() => []),
         apiWalletService.getTotalSpending().catch(() => ({ totalSpent: 0 })),
       ]);
+      
       setWalletInfo(wallet);
       setTransactions(txns);
       setFilteredTransactions(txns);
@@ -96,8 +121,9 @@ export const Wallet: React.FC = () => {
       return;
     }
 
-    if (walletInfo && amountNum > walletInfo.balance) {
-      notification.warning('Insufficient balance', `Your balance is $${walletInfo.balance.toFixed(2)}`);
+    const currentBalance = walletInfo?.balance ?? user?.balance ?? 0;
+    if (amountNum > currentBalance) {
+      notification.warning('Insufficient balance', `Your balance is $${currentBalance.toFixed(2)}`);
       return;
     }
 
@@ -165,7 +191,9 @@ export const Wallet: React.FC = () => {
               <Shield className="h-5 w-5 text-blue-200" />
               <p className="text-blue-100 text-sm">Blockchain Wallet Balance</p>
             </div>
-            <h2 className="text-5xl font-bold mb-2">${user?.balance.toFixed(2)}</h2>
+            <h2 className="text-5xl font-bold mb-2">
+              ${(walletInfo?.balance ?? user?.balance ?? 0).toFixed(2)}
+            </h2>
             <div className="flex items-center gap-2 text-sm text-blue-100">
               <Layers className="h-4 w-4" />
               <span>Secured by Hyperledger Fabric</span>
@@ -176,7 +204,7 @@ export const Wallet: React.FC = () => {
 
         <div className="mb-4 bg-white/10 backdrop-blur-sm rounded-lg p-3">
           <p className="text-blue-100 text-xs mb-1">Wallet Address (Blockchain ID)</p>
-          <p className="font-mono text-sm break-all">{walletInfo?.address || user?.walletAddress}</p>
+          <p className="font-mono text-sm break-all">{walletInfo?.address}</p>
         </div>
 
         <div className="flex gap-3">
@@ -354,7 +382,7 @@ export const Wallet: React.FC = () => {
               Withdraw funds from your wallet. Transaction will be recorded on the blockchain.
             </p>
             <p className="text-sm text-gray-500 mb-6">
-              Available balance: ${user?.balance.toFixed(2)}
+              Available balance: ${(walletInfo?.balance ?? user?.balance ?? 0).toFixed(2)}
             </p>
 
             <Input
@@ -365,7 +393,7 @@ export const Wallet: React.FC = () => {
               onChange={(e) => setAmount(e.target.value)}
               min="0"
               step="0.01"
-              max={user?.balance}
+              max={walletInfo?.balance ?? user?.balance}
               className="mb-6"
             />
 

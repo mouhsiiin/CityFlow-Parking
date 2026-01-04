@@ -27,8 +27,27 @@ export const Dashboard: React.FC = () => {
         spotService.getAllSpots(),
       ]);
 
-      setReservations(userReservations);
-      const spotMap = new Map(allSpots.map((spot) => [spot.id, spot]));
+      // Handle both array and wrapped object responses for reservations
+      let reservationsArray = Array.isArray(userReservations)
+        ? userReservations
+        : (userReservations?.data && Array.isArray(userReservations.data)
+          ? userReservations.data
+          : (userReservations?.reservations && Array.isArray(userReservations.reservations)
+            ? userReservations.reservations
+            : []));
+      
+      setReservations(reservationsArray);
+      
+      // Handle both array and wrapped object responses for spots
+      let spotsArray = Array.isArray(allSpots) 
+        ? allSpots 
+        : (allSpots?.data && Array.isArray(allSpots.data) 
+          ? allSpots.data 
+          : (allSpots?.spots && Array.isArray(allSpots.spots)
+            ? allSpots.spots
+            : []));
+      
+      const spotMap = new Map(spotsArray.map((spot) => [spot.id, spot]));
       setSpots(spotMap);
     } catch (error) {
       console.error('Error loading dashboard data:', error);

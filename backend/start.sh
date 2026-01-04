@@ -94,8 +94,9 @@ sleep 10
 
 # Check if all containers are running
 RUNNING_CONTAINERS=$(docker ps --filter "name=peer*" --filter "name=orderer*" --format "{{.Names}}" | wc -l)
-if [ $RUNNING_CONTAINERS -lt 9 ]; then
-    print_error "Not all containers started successfully"
+EXPECTED_CONTAINERS=5  # 1 orderer + 4 peer0 containers
+if [ $RUNNING_CONTAINERS -lt $EXPECTED_CONTAINERS ]; then
+    print_error "Not all containers started successfully (Expected: $EXPECTED_CONTAINERS, Running: $RUNNING_CONTAINERS)"
     docker ps -a
     exit 1
 fi
@@ -187,10 +188,10 @@ echo "=========================================="
 echo ""
 print_info "Network Status:"
 echo "  Orderer:              http://localhost:7050"
-echo "  ParkingOperator:      http://localhost:7051, 7151"
-echo "  ChargingStation:      http://localhost:8051, 8151"
-echo "  UserService:          http://localhost:9051, 9151"
-echo "  CityManagement:       http://localhost:10051, 10151"
+echo "  ParkingOperator:      http://localhost:7051"
+echo "  ChargingStation:      http://localhost:8051"
+echo "  UserService:          http://localhost:9051"
+echo "  CityManagement:       http://localhost:10051"
 echo ""
 print_info "Backend API:"
 echo "  URL:                  http://localhost:8080"

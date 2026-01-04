@@ -10,43 +10,43 @@ import (
 
 // Wallet represents a user's wallet
 type Wallet struct {
-	DocType     string    `json:"docType"`
-	WalletID    string    `json:"walletId"`
-	UserID      string    `json:"userId"`
-	Balance     float64   `json:"balance"`
-	Currency    string    `json:"currency"`
-	CreatedAt   time.Time `json:"createdAt"`
-	LastUpdated time.Time `json:"lastUpdated"`
+	DocType     string  `json:"docType"`
+	WalletID    string  `json:"walletId"`
+	UserID      string  `json:"userId"`
+	Balance     float64 `json:"balance"`
+	Currency    string  `json:"currency"`
+	CreatedAt   string  `json:"createdAt"`
+	LastUpdated string  `json:"lastUpdated"`
 }
 
 // Payment represents a payment transaction
 type Payment struct {
-	DocType     string     `json:"docType"`
-	PaymentID   string     `json:"paymentId"`
-	WalletID    string     `json:"walletId"`
-	UserID      string     `json:"userId"`
-	Amount      float64    `json:"amount"`
-	Type        string     `json:"type"` // parking, charging, refund, topup
-	ReferenceID string     `json:"referenceId"` // bookingId or sessionId
-	Status      string     `json:"status"` // pending, completed, failed, refunded
-	Description string     `json:"description"`
-	CreatedAt   time.Time  `json:"createdAt"`
-	CompletedAt *time.Time `json:"completedAt,omitempty"`
+	DocType     string  `json:"docType"`
+	PaymentID   string  `json:"paymentId"`
+	WalletID    string  `json:"walletId"`
+	UserID      string  `json:"userId"`
+	Amount      float64 `json:"amount"`
+	Type        string  `json:"type"` // parking, charging, refund, topup
+	ReferenceID string  `json:"referenceId"` // bookingId or sessionId
+	Status      string  `json:"status"` // pending, completed, failed, refunded
+	Description string  `json:"description"`
+	CreatedAt   string  `json:"createdAt"`
+	CompletedAt string  `json:"completedAt,omitempty"`
 }
 
 // Transaction represents a wallet transaction record
 type Transaction struct {
-	DocType       string    `json:"docType"`
-	TransactionID string    `json:"transactionId"`
-	WalletID      string    `json:"walletId"`
-	UserID        string    `json:"userId"`
-	Type          string    `json:"type"` // debit, credit
-	Amount        float64   `json:"amount"`
-	BalanceBefore float64   `json:"balanceBefore"`
-	BalanceAfter  float64   `json:"balanceAfter"`
-	Description   string    `json:"description"`
-	PaymentID     string    `json:"paymentId"`
-	Timestamp     time.Time `json:"timestamp"`
+	DocType       string  `json:"docType"`
+	TransactionID string  `json:"transactionId"`
+	WalletID      string  `json:"walletId"`
+	UserID        string  `json:"userId"`
+	Type          string  `json:"type"` // debit, credit
+	Amount        float64 `json:"amount"`
+	BalanceBefore float64 `json:"balanceBefore"`
+	BalanceAfter  float64 `json:"balanceAfter"`
+	Description   string  `json:"description"`
+	PaymentID     string  `json:"paymentId"`
+	Timestamp     string  `json:"timestamp"`
 }
 
 // WalletContract provides functions for managing wallets and payments
@@ -73,7 +73,7 @@ func (c *WalletContract) CreateWallet(ctx contractapi.TransactionContextInterfac
 		return fmt.Errorf("user %s already has a wallet", userId)
 	}
 
-	now := time.Now()
+	now := time.Now().Format(time.RFC3339)
 	wallet := Wallet{
 		DocType:     "wallet",
 		WalletID:    walletId,
@@ -120,9 +120,8 @@ func (c *WalletContract) GetWallet(ctx contractapi.TransactionContextInterface, 
 
 // GetWalletByUserId retrieves a wallet by user ID
 func (c *WalletContract) GetWalletByUserId(ctx contractapi.TransactionContextInterface, userId string) (*Wallet, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"wallet","userId":"%s"}}`, userId)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Use composite key to find wallet
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("userId~walletId", []string{userId})
 	if err != nil {
 		return nil, err
 	}
@@ -134,12 +133,18 @@ func (c *WalletContract) GetWalletByUserId(ctx contractapi.TransactionContextInt
 			return nil, err
 		}
 
-		var wallet Wallet
-		err = json.Unmarshal(queryResponse.Value, &wallet)
+		// Extract walletId from composite key
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
 		if err != nil {
 			return nil, err
 		}
-		return &wallet, nil
+		if len(compositeKeyParts) < 2 {
+			return nil, fmt.Errorf("invalid composite key")
+		}
+		walletId := compositeKeyParts[1]
+
+		// Get wallet by ID
+		return c.GetWallet(ctx, walletId)
 	}
 
 	return nil, fmt.Errorf("wallet for user %s not found", userId)
@@ -158,7 +163,7 @@ func (c *WalletContract) AddFunds(ctx contractapi.TransactionContextInterface, w
 
 	balanceBefore := wallet.Balance
 	wallet.Balance += amount
-	wallet.LastUpdated = time.Now()
+	wallet.LastUpdated = time.Now().Format(time.RFC3339)
 
 	walletJSON, err := json.Marshal(wallet)
 	if err != nil {
@@ -218,7 +223,7 @@ func (c *WalletContract) ProcessPayment(ctx contractapi.TransactionContextInterf
 		return nil, fmt.Errorf("insufficient balance: have %.2f, need %.2f", wallet.Balance, amount)
 	}
 
-	now := time.Now()
+	now := time.Now().Format(time.RFC3339)
 
 	// Create payment record
 	payment := Payment{
@@ -232,7 +237,7 @@ func (c *WalletContract) ProcessPayment(ctx contractapi.TransactionContextInterf
 		Status:      "completed",
 		Description: description,
 		CreatedAt:   now,
-		CompletedAt: &now,
+		CompletedAt: now,
 	}
 
 	paymentJSON, err := json.Marshal(payment)
@@ -262,6 +267,13 @@ func (c *WalletContract) ProcessPayment(ctx contractapi.TransactionContextInterf
 	if err != nil {
 		return nil, err
 	}
+
+	// Create composite key for querying payments by user
+	userPaymentIndexKey, err := ctx.GetStub().CreateCompositeKey("userId~paymentId", []string{wallet.UserID, paymentId})
+	if err != nil {
+		return nil, err
+	}
+	ctx.GetStub().PutState(userPaymentIndexKey, []byte{0x00})
 
 	// Save updated wallet
 	err = ctx.GetStub().PutState(walletId, walletJSON)
@@ -303,7 +315,7 @@ func (c *WalletContract) RefundPayment(ctx contractapi.TransactionContextInterfa
 		return nil, err
 	}
 
-	now := time.Now()
+	now := time.Now().Format(time.RFC3339)
 
 	// Create refund payment
 	refundPayment := Payment{
@@ -317,7 +329,7 @@ func (c *WalletContract) RefundPayment(ctx contractapi.TransactionContextInterfa
 		Status:      "completed",
 		Description: fmt.Sprintf("Refund for payment %s", paymentId),
 		CreatedAt:   now,
-		CompletedAt: &now,
+		CompletedAt: now,
 	}
 
 	refundJSON, err := json.Marshal(refundPayment)
@@ -354,6 +366,14 @@ func (c *WalletContract) RefundPayment(ctx contractapi.TransactionContextInterfa
 	if err != nil {
 		return nil, err
 	}
+
+	// Create composite key for querying payments by user
+	userPaymentIndexKey, err := ctx.GetStub().CreateCompositeKey("userId~paymentId", []string{wallet.UserID, refundPaymentId})
+	if err != nil {
+		return nil, err
+	}
+	ctx.GetStub().PutState(userPaymentIndexKey, []byte{0x00})
+
 	err = ctx.GetStub().PutState(paymentId, originalPaymentJSON)
 	if err != nil {
 		return nil, err
@@ -405,13 +425,26 @@ func (c *WalletContract) recordTransaction(ctx contractapi.TransactionContextInt
 		BalanceAfter:  balanceAfter,
 		Description:   description,
 		PaymentID:     paymentId,
-		Timestamp:     time.Now(),
+		Timestamp:     time.Now().Format(time.RFC3339),
 	}
 
 	transactionJSON, err := json.Marshal(transaction)
 	if err != nil {
 		return err
 	}
+
+	// Create composite keys for querying
+	walletIndexKey, err := ctx.GetStub().CreateCompositeKey("walletId~transactionId", []string{walletId, transactionId})
+	if err != nil {
+		return err
+	}
+	ctx.GetStub().PutState(walletIndexKey, []byte{0x00})
+
+	userIndexKey, err := ctx.GetStub().CreateCompositeKey("userId~transactionId", []string{userId, transactionId})
+	if err != nil {
+		return err
+	}
+	ctx.GetStub().PutState(userIndexKey, []byte{0x00})
 
 	return ctx.GetStub().PutState(transactionId, transactionJSON)
 }
@@ -437,9 +470,8 @@ func (c *WalletContract) GetTransaction(ctx contractapi.TransactionContextInterf
 
 // GetWalletTransactions returns all transactions for a wallet
 func (c *WalletContract) GetWalletTransactions(ctx contractapi.TransactionContextInterface, walletId string) ([]*Transaction, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"transaction","walletId":"%s"},"sort":[{"timestamp":"desc"}]}`, walletId)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Use composite key to find transactions
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("walletId~transactionId", []string{walletId})
 	if err != nil {
 		return nil, err
 	}
@@ -452,12 +484,21 @@ func (c *WalletContract) GetWalletTransactions(ctx contractapi.TransactionContex
 			return nil, err
 		}
 
-		var transaction Transaction
-		err = json.Unmarshal(queryResponse.Value, &transaction)
+		// Extract transactionId from composite key
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
 		if err != nil {
 			return nil, err
 		}
-		transactions = append(transactions, &transaction)
+		if len(compositeKeyParts) < 2 {
+			continue
+		}
+		transactionId := compositeKeyParts[1]
+
+		// Get transaction by ID
+		transaction, err := c.GetTransaction(ctx, transactionId)
+		if err == nil {
+			transactions = append(transactions, transaction)
+		}
 	}
 
 	return transactions, nil
@@ -465,9 +506,8 @@ func (c *WalletContract) GetWalletTransactions(ctx contractapi.TransactionContex
 
 // GetUserTransactions returns all transactions for a user
 func (c *WalletContract) GetUserTransactions(ctx contractapi.TransactionContextInterface, userId string) ([]*Transaction, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"transaction","userId":"%s"},"sort":[{"timestamp":"desc"}]}`, userId)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Use composite key to find transactions
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("userId~transactionId", []string{userId})
 	if err != nil {
 		return nil, err
 	}
@@ -480,12 +520,21 @@ func (c *WalletContract) GetUserTransactions(ctx contractapi.TransactionContextI
 			return nil, err
 		}
 
-		var transaction Transaction
-		err = json.Unmarshal(queryResponse.Value, &transaction)
+		// Extract transactionId from composite key
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
 		if err != nil {
 			return nil, err
 		}
-		transactions = append(transactions, &transaction)
+		if len(compositeKeyParts) < 2 {
+			continue
+		}
+		transactionId := compositeKeyParts[1]
+
+		// Get transaction by ID
+		transaction, err := c.GetTransaction(ctx, transactionId)
+		if err == nil {
+			transactions = append(transactions, transaction)
+		}
 	}
 
 	return transactions, nil
@@ -493,9 +542,8 @@ func (c *WalletContract) GetUserTransactions(ctx contractapi.TransactionContextI
 
 // QueryTransactionsByType returns transactions by type
 func (c *WalletContract) QueryTransactionsByType(ctx contractapi.TransactionContextInterface, userId, txType string) ([]*Transaction, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"transaction","userId":"%s","type":"%s"},"sort":[{"timestamp":"desc"}]}`, userId, txType)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Use composite key to find transactions, then filter by type
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("userId~transactionId", []string{userId})
 	if err != nil {
 		return nil, err
 	}
@@ -508,12 +556,21 @@ func (c *WalletContract) QueryTransactionsByType(ctx contractapi.TransactionCont
 			return nil, err
 		}
 
-		var transaction Transaction
-		err = json.Unmarshal(queryResponse.Value, &transaction)
+		// Extract transactionId from composite key
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
 		if err != nil {
 			return nil, err
 		}
-		transactions = append(transactions, &transaction)
+		if len(compositeKeyParts) < 2 {
+			continue
+		}
+		transactionId := compositeKeyParts[1]
+
+		// Get transaction by ID
+		transaction, err := c.GetTransaction(ctx, transactionId)
+		if err == nil && transaction.Type == txType {
+			transactions = append(transactions, transaction)
+		}
 	}
 
 	return transactions, nil
@@ -536,9 +593,8 @@ func (c *WalletContract) GetTotalSpent(ctx contractapi.TransactionContextInterfa
 
 // GetUserPayments returns all payments for a user
 func (c *WalletContract) GetUserPayments(ctx contractapi.TransactionContextInterface, userId string) ([]*Payment, error) {
-	queryString := fmt.Sprintf(`{"selector":{"docType":"payment","userId":"%s"},"sort":[{"createdAt":"desc"}]}`, userId)
-	
-	resultsIterator, err := ctx.GetStub().GetQueryResult(queryString)
+	// Use composite key to find payments
+	resultsIterator, err := ctx.GetStub().GetStateByPartialCompositeKey("userId~paymentId", []string{userId})
 	if err != nil {
 		return nil, err
 	}
@@ -551,12 +607,21 @@ func (c *WalletContract) GetUserPayments(ctx contractapi.TransactionContextInter
 			return nil, err
 		}
 
-		var payment Payment
-		err = json.Unmarshal(queryResponse.Value, &payment)
+		// Extract paymentId from composite key
+		_, compositeKeyParts, err := ctx.GetStub().SplitCompositeKey(queryResponse.Key)
 		if err != nil {
 			return nil, err
 		}
-		payments = append(payments, &payment)
+		if len(compositeKeyParts) < 2 {
+			continue
+		}
+		paymentId := compositeKeyParts[1]
+
+		// Get payment by ID
+		payment, err := c.GetPayment(ctx, paymentId)
+		if err == nil {
+			payments = append(payments, payment)
+		}
 	}
 
 	return payments, nil

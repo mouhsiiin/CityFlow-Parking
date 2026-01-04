@@ -1,11 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, LayoutDashboard, Wallet, LogOut, History } from 'lucide-react';
+import { MapPin, LayoutDashboard, Wallet, LogOut, History, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { walletService } from '../services/apiService';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const wallet = await walletService.getWallet();
+        setWalletBalance(wallet.balance);
+      } catch (error) {
+        console.error('Failed to fetch wallet balance:', error);
+      }
+    };
+
+    if (user) {
+      fetchWalletBalance();
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     await logout();
@@ -18,6 +35,11 @@ export const Navbar: React.FC = () => {
     { path: '/transactions', icon: History, label: 'Transactions' },
   ];
 
+  // Add admin link if user is admin
+  if (user?.role === 'admin') {
+    navItems.push({ path: '/admin', icon: Settings, label: 'Admin' });
+  }
+
   return (
     <nav className="bg-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -29,7 +51,7 @@ export const Navbar: React.FC = () => {
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
                 return (
                   <Link
                     key={item.path}
@@ -52,7 +74,7 @@ export const Navbar: React.FC = () => {
               <>
                 <div className="text-sm text-gray-700">
                   <span className="font-medium">{user.email}</span>
-                  <div className="text-xs text-gray-500">Balance: ${user.balance.toFixed(2)}</div>
+                  <div className="text-xs text-gray-500">Balance: ${(walletBalance ?? user.balance ?? 0).toFixed(2)}</div>
                 </div>
                 <button
                   onClick={handleLogout}

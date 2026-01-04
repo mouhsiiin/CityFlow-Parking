@@ -2,6 +2,10 @@
 export { default as apiService } from './apiService';
 export * from './apiService';
 
+// Export admin service
+export { adminService } from './adminService';
+export * from './adminService';
+
 // Keep existing exports for backwards compatibility
 import { apiClient } from './api';
 import { API_ENDPOINTS } from '../config/api';

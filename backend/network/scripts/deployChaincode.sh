@@ -227,20 +227,11 @@ wait_for_jobs() {
 echo "Deploying User Chaincode..."
 package_chaincode "user" "user"
 
-# Install on all peers in user-channel (batched by organization)
-echo "Installing user chaincode on UserService peers..."
+# Install on all peers in user-channel
+echo "Installing user chaincode on all organizations..."
 install_chaincode_async "user" peer0 userservice.cityflow.com UserServiceMSP 9051
-install_chaincode_async "user" peer1 userservice.cityflow.com UserServiceMSP 9151
-wait_for_jobs
-
-echo "Installing user chaincode on ParkingOperator peers..."
 install_chaincode_async "user" peer0 parkingoperator.cityflow.com ParkingOperatorMSP 7051
-install_chaincode_async "user" peer1 parkingoperator.cityflow.com ParkingOperatorMSP 7151
-wait_for_jobs
-
-echo "Installing user chaincode on ChargingStation peers..."
 install_chaincode_async "user" peer0 chargingstation.cityflow.com ChargingStationMSP 8051
-install_chaincode_async "user" peer1 chargingstation.cityflow.com ChargingStationMSP 8151
 wait_for_jobs
 
 # Get package ID and approve (parallel)
@@ -266,20 +257,11 @@ echo "User chaincode deployed successfully"
 echo "Deploying Parking Chaincode..."
 package_chaincode "parking" "parking"
 
-# Install on all peers in parking-channel (batched by organization)
-echo "Installing parking chaincode on ParkingOperator peers..."
+# Install on all peers in parking-channel
+echo "Installing parking chaincode on all organizations..."
 install_chaincode_async "parking" peer0 parkingoperator.cityflow.com ParkingOperatorMSP 7051
-install_chaincode_async "parking" peer1 parkingoperator.cityflow.com ParkingOperatorMSP 7151
-wait_for_jobs
-
-echo "Installing parking chaincode on UserService peers..."
 install_chaincode_async "parking" peer0 userservice.cityflow.com UserServiceMSP 9051
-install_chaincode_async "parking" peer1 userservice.cityflow.com UserServiceMSP 9151
-wait_for_jobs
-
-echo "Installing parking chaincode on CityManagement peers..."
 install_chaincode_async "parking" peer0 citymanagement.cityflow.com CityManagementMSP 10051
-install_chaincode_async "parking" peer1 citymanagement.cityflow.com CityManagementMSP 10151
 wait_for_jobs
 
 # Get package ID and approve (parallel)
@@ -305,20 +287,11 @@ echo "Parking chaincode deployed successfully"
 echo "Deploying Charging Chaincode..."
 package_chaincode "charging" "charging"
 
-# Install on all peers in charging-channel (batched by organization)
-echo "Installing charging chaincode on ChargingStation peers..."
+# Install on all peers in charging-channel
+echo "Installing charging chaincode on all organizations..."
 install_chaincode_async "charging" peer0 chargingstation.cityflow.com ChargingStationMSP 8051
-install_chaincode_async "charging" peer1 chargingstation.cityflow.com ChargingStationMSP 8151
-wait_for_jobs
-
-echo "Installing charging chaincode on UserService peers..."
 install_chaincode_async "charging" peer0 userservice.cityflow.com UserServiceMSP 9051
-install_chaincode_async "charging" peer1 userservice.cityflow.com UserServiceMSP 9151
-wait_for_jobs
-
-echo "Installing charging chaincode on CityManagement peers..."
 install_chaincode_async "charging" peer0 citymanagement.cityflow.com CityManagementMSP 10051
-install_chaincode_async "charging" peer1 citymanagement.cityflow.com CityManagementMSP 10151
 wait_for_jobs
 
 # Get package ID and approve (parallel)
@@ -344,25 +317,12 @@ echo "Charging chaincode deployed successfully"
 echo "Deploying Wallet Chaincode..."
 package_chaincode "wallet" "wallet"
 
-# Install on all peers in wallet-channel (batched by organization)
-echo "Installing wallet chaincode on UserService peers..."
+# Install on all peers in wallet-channel
+echo "Installing wallet chaincode on all organizations..."
 install_chaincode_async "wallet" peer0 userservice.cityflow.com UserServiceMSP 9051
-install_chaincode_async "wallet" peer1 userservice.cityflow.com UserServiceMSP 9151
-wait_for_jobs
-
-echo "Installing wallet chaincode on ParkingOperator peers..."
 install_chaincode_async "wallet" peer0 parkingoperator.cityflow.com ParkingOperatorMSP 7051
-install_chaincode_async "wallet" peer1 parkingoperator.cityflow.com ParkingOperatorMSP 7151
-wait_for_jobs
-
-echo "Installing wallet chaincode on ChargingStation peers..."
 install_chaincode_async "wallet" peer0 chargingstation.cityflow.com ChargingStationMSP 8051
-install_chaincode_async "wallet" peer1 chargingstation.cityflow.com ChargingStationMSP 8151
-wait_for_jobs
-
-echo "Installing wallet chaincode on CityManagement peers..."
 install_chaincode_async "wallet" peer0 citymanagement.cityflow.com CityManagementMSP 10051
-install_chaincode_async "wallet" peer1 citymanagement.cityflow.com CityManagementMSP 10151
 wait_for_jobs
 
 # Get package ID and approve (parallel)
