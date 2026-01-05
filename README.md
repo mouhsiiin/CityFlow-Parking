@@ -125,7 +125,11 @@ chmod +x install.sh start.sh stop.sh
 # Start the entire blockchain network and API
 ./start.sh
 
-# Frontend Setup (in another terminal)
+# Generate test data (in another terminal)
+cd backend
+./generate_test_data.sh
+
+# Frontend Setup
 cd ../frontend
 npm install
 npm run dev
@@ -136,23 +140,23 @@ npm run dev
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8080
 - **API Health**: http://localhost:8080/health
-- **Security Dashboard**: http://localhost:8080/security-dashboard.html
+- **Security Dashboard**: http://localhost:5173/admin/security
 
-### Test User
+### Test Credentials
 
-Create a test user to explore the system:
-
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "test@example.com",
-    "password": "test123",
-    "firstName": "Test",
-    "lastName": "User",
-    "phone": "+1234567890"
-  }'
+**Admin User:**
 ```
+Email: admin@cityflow.com
+Password: admin123
+```
+
+**Regular User:**
+```
+Email: john.doe@example.com
+Password: password123
+```
+
+For detailed setup instructions, see [QUICK_START.md](QUICK_START.md).
 
 ## 📚 Documentation
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, LayoutDashboard, Wallet, LogOut, History, Settings } from 'lucide-react';
+import { MapPin, LayoutDashboard, Wallet, LogOut, History, Settings, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { walletService } from '../services/apiService';
 
@@ -35,9 +35,10 @@ export const Navbar: React.FC = () => {
     { path: '/transactions', icon: History, label: 'Transactions' },
   ];
 
-  // Add admin link if user is admin
+  // Add admin links if user is admin
   if (user?.role === 'admin') {
     navItems.push({ path: '/admin', icon: Settings, label: 'Admin' });
+    navItems.push({ path: '/admin/security', icon: Shield, label: 'Security' });
   }
 
   return (
