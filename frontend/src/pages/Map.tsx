@@ -267,11 +267,11 @@ export const Map: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* OpenStreetMap Visualization */}
         <div className="lg:col-span-2">
-          <Card title="Map View">
-            <div className="rounded-lg h-96 overflow-hidden">
+          <Card title="Map View - Tangier, Morocco">
+            <div className="rounded-lg h-[600px] overflow-hidden shadow-lg">
               <MapContainer
-                center={[40.7128, -74.0060]} // Default to New York City
-                zoom={13}
+                center={[35.7595, -5.8340]} // Tangier, Morocco coordinates
+                zoom={14}
                 style={{ height: '100%', width: '100%' }}
                 scrollWheelZoom={true}
               >
@@ -313,55 +313,72 @@ export const Map: React.FC = () => {
         {/* Spot Details / List */}
         <div>
           {selectedSpot ? (
-            <Card>
-              <div className="mb-4">
-                <div className="flex items-center mb-2">
+            <Card className="shadow-xl border-2 border-blue-100">
+              <div className="mb-6">
+                <div className="flex items-center mb-3 pb-3 border-b-2 border-gray-200">
                   {selectedSpot.type === 'ev_charging' ? (
-                    <Zap className="h-6 w-6 text-yellow-500 mr-2" />
+                    <div className="p-3 bg-yellow-100 rounded-xl mr-3">
+                      <Zap className="h-7 w-7 text-yellow-600" />
+                    </div>
                   ) : (
-                    <MapPin className="h-6 w-6 text-blue-500 mr-2" />
+                    <div className="p-3 bg-blue-100 rounded-xl mr-3">
+                      <MapPin className="h-7 w-7 text-blue-600" />
+                    </div>
                   )}
-                  <h3 className="text-xl font-semibold">
-                    {selectedSpot.type === 'ev_charging' ? 'EV Charging Station' : 'Parking Spot'}
-                  </h3>
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {selectedSpot.type === 'ev_charging' ? 'EV Charging Station' : 'Parking Spot'}
+                    </h3>
+                    <p className="text-sm text-gray-600">Spot #{selectedSpot.spotNumber || 'N/A'}</p>
+                  </div>
                 </div>
-                <span
-                  className={`inline-block px-2 py-1 text-xs font-medium rounded-full ${
-                    selectedSpot.status === 'available'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}
-                >
-                  {selectedSpot.status.toUpperCase()}
-                </span>
+                <div className="flex items-center justify-between">
+                  <span
+                    className={`inline-block px-4 py-2 text-sm font-bold rounded-lg shadow-sm ${
+                      selectedSpot.status === 'available'
+                        ? 'bg-green-100 text-green-800 border-2 border-green-300'
+                        : 'bg-red-100 text-red-800 border-2 border-red-300'
+                    }`}
+                  >
+                    {selectedSpot.status.toUpperCase()}
+                  </span>
+                  <span className="text-2xl font-bold text-blue-600">
+                    ${selectedSpot.pricePerHour}/hr
+                  </span>
+                </div>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <div>
-                  <p className="text-sm text-gray-600">Location</p>
-                  <p className="font-medium">{selectedSpot.location.address}</p>
+              <div className="space-y-4 mb-6">
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Location</p>
+                  <p className="font-semibold text-gray-900 flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-blue-500" />
+                    {selectedSpot.location.address}
+                  </p>
                 </div>
 
-                <div>
-                  <p className="text-sm text-gray-600">Price</p>
-                  <p className="font-medium text-lg">${selectedSpot.pricePerHour}/hour</p>
-                </div>
-
-                {selectedSpot.chargingPower && (
-                  <div>
-                    <p className="text-sm text-gray-600">Charging Power</p>
-                    <p className="font-medium">{selectedSpot.chargingPower} kW</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-600 uppercase mb-1">Hourly Rate</p>
+                    <p className="font-bold text-xl text-blue-900">${selectedSpot.pricePerHour}</p>
                   </div>
-                )}
+
+                  {selectedSpot.chargingPower && (
+                    <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <p className="text-xs font-semibold text-yellow-600 uppercase mb-1">Power</p>
+                      <p className="font-bold text-xl text-yellow-900">{selectedSpot.chargingPower} kW</p>
+                    </div>
+                  )}
+                </div>
 
                 {selectedSpot.features && selectedSpot.features.length > 0 && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-1">Features</p>
-                    <div className="flex flex-wrap gap-1">
+                  <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                    <p className="text-xs font-semibold text-purple-600 uppercase mb-2">Features</p>
+                    <div className="flex flex-wrap gap-2">
                       {selectedSpot.features.map((feature, index) => (
                         <span
                           key={index}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                          className="px-3 py-1.5 bg-purple-600 text-white text-xs font-medium rounded-full shadow-sm"
                         >
                           {feature}
                         </span>
@@ -371,13 +388,17 @@ export const Map: React.FC = () => {
                 )}
               </div>
 
-              {selectedSpot.status === 'available' && (
-                <Button onClick={handleReserveClick} className="w-full">
-                  Reserve This Spot
+              {selectedSpot.status === 'available' ? (
+                <Button onClick={handleReserveClick} className="w-full mb-3 py-3 text-lg font-semibold">
+                  🎫 Reserve This Spot
                 </Button>
+              ) : (
+                <div className="mb-3 p-3 bg-red-50 rounded-lg border border-red-200 text-center">
+                  <p className="text-red-700 font-semibold">This spot is currently unavailable</p>
+                </div>
               )}
-              <Button variant="ghost" onClick={() => setSelectedSpot(null)} className="w-full mt-2">
-                Close
+              <Button variant="ghost" onClick={() => setSelectedSpot(null)} className="w-full">
+                ← Back to List
               </Button>
             </Card>
           ) : (

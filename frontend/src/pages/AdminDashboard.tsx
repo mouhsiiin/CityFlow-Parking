@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { adminService } from '../services';
 import { Card, Button, Loading } from '../components';
+import { SecurityMonitorWidget } from '../components/SecurityMonitorWidget';
 
 interface DashboardStats {
   totalParkingSpots: number;
@@ -105,7 +106,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Management Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <Card>
           <div className="flex items-start justify-between mb-4">
             <div>
@@ -153,6 +154,20 @@ const AdminDashboard: React.FC = () => {
             </Button>
           </div>
         </Card>
+      </div>
+
+      {/* Security Monitoring Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">Security Monitoring</h2>
+          <Button
+            onClick={() => navigate('/admin/security')}
+            variant="secondary"
+          >
+            View Full Dashboard
+          </Button>
+        </div>
+        <SecurityMonitorWidget />
       </div>
     </div>
   );

@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotification } from '../context/NotificationContext';
 import { Card, Button, BlockchainLink } from '../components';
-import { reservationService, spotService } from '../services';
-import type { Reservation, ParkingSpot } from '../types';
+import { reservationService, spotService, walletService } from '../services';
+import type { Reservation, ParkingSpot, WalletInfo } from '../types';
 import { MapPin, Calendar, Clock, DollarSign, Zap, AlertCircle, Shield, Layers } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 
 export const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -13,6 +14,7 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [spots, setSpots] = useState<Map<string, ParkingSpot>>(new Map());
+  const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -22,10 +24,12 @@ export const Dashboard: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
-      const [userReservations, allSpots] = await Promise.all([
+      const [userReservations, allSpots, wallet] = await Promise.all([
         reservationService.getUserReservations(),
         spotService.getAllSpots(),
+        walletService.getWalletInfo().catch(() => null),
       ]);
+
 
       // Handle both array and wrapped object responses for reservations
       let reservationsArray = Array.isArray(userReservations)
@@ -34,21 +38,61 @@ export const Dashboard: React.FC = () => {
           ? userReservations.data
           : (userReservations?.reservations && Array.isArray(userReservations.reservations)
             ? userReservations.reservations
-            : []));
-      
-      setReservations(reservationsArray);
-      
+            : (userReservations?.bookings && Array.isArray(userReservations.bookings)
+              ? userReservations.bookings
+              : [])));
+
+      // Map API response fields to Reservation type
+      const mappedReservations = reservationsArray.map((booking: any) => ({
+        id: booking.bookingId || booking.id,
+        spotId: booking.spotId,
+        userId: booking.userId,
+        startTime: booking.startTime,
+        endTime: booking.endTime,
+        actualCheckIn: booking.actualCheckIn,
+        actualCheckOut: booking.actualCheckOut,
+        duration: booking.duration,
+        pricePerHour: booking.pricePerHour,
+        totalCost: booking.totalCost,
+        status: booking.status,
+        qrCode: booking.qrCode,
+        paymentId: booking.paymentId,
+        blockchainTxHash: booking.blockchainTxHash,
+        createdAt: booking.createdAt,
+        updatedAt: booking.updatedAt,
+      }));
+
+      setReservations(mappedReservations);
+
       // Handle both array and wrapped object responses for spots
-      let spotsArray = Array.isArray(allSpots) 
-        ? allSpots 
-        : (allSpots?.data && Array.isArray(allSpots.data) 
-          ? allSpots.data 
+      let spotsArray = Array.isArray(allSpots)
+        ? allSpots
+        : (allSpots?.data && Array.isArray(allSpots.data)
+          ? allSpots.data
           : (allSpots?.spots && Array.isArray(allSpots.spots)
             ? allSpots.spots
             : []));
-      
-      const spotMap = new Map(spotsArray.map((spot) => [spot.id, spot]));
+
+      // Map API response fields to ParkingSpot type
+      const mappedSpots = spotsArray.map((spot: any) => ({
+        id: spot.spotId || spot.id,
+        spotNumber: spot.spotNumber,
+        location: typeof spot.location === 'string'
+          ? { latitude: spot.latitude || 0, longitude: spot.longitude || 0, address: spot.location }
+          : spot.location,
+        type: spot.spotType === 'standard' ? 'parking' : spot.spotType === 'ev_charging' ? 'ev_charging' : (spot.type || 'parking'),
+        status: spot.status || 'available',
+        pricePerHour: spot.pricePerHour,
+        features: spot.features,
+        hasEVCharging: spot.hasEVCharging,
+        operatorId: spot.operatorId,
+        createdAt: spot.createdAt,
+        updatedAt: spot.updatedAt,
+      }));
+
+      const spotMap = new Map(mappedSpots.map((spot) => [spot.id, spot]));
       setSpots(spotMap);
+      setWalletInfo(wallet);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       notification.error('Failed to load dashboard', 'Please try refreshing the page');
@@ -73,6 +117,7 @@ export const Dashboard: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
+      case 'confirmed':
         return 'bg-green-100 text-green-800';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
@@ -93,7 +138,7 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  const activeReservations = reservations.filter((r) => r.status === 'active' || r.status === 'pending');
+  const activeReservations = reservations.filter((r) => r.status === 'active' || r.status === 'pending' || r.status === 'confirmed');
   const pastReservations = reservations.filter((r) => r.status === 'completed' || r.status === 'cancelled');
 
   return (
@@ -142,7 +187,10 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Wallet Balance</p>
-              <p className="text-2xl font-semibold text-gray-900">${user?.balance.toFixed(2)}</p>
+              <p className="text-2xl font-semibold text-gray-900">${walletInfo?.balance?.toFixed(2) || '0.00'}</p>
+              {walletInfo && (
+                <p className="text-xs text-gray-500 mt-1">Blockchain Wallet</p>
+              )}
             </div>
           </div>
         </Card>
@@ -220,8 +268,45 @@ export const Dashboard: React.FC = () => {
                           </div>
                         )}
                       </div>
+
+                      {/* QR Code Display */}
+                      {reservation.qrCode && (
+                        <div className="mt-4 p-6 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg border-2 border-blue-200">
+                          <div className="text-center">
+                            <p className="text-sm font-semibold text-blue-900 mb-3 flex items-center justify-center gap-2">
+                              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                              </svg>
+                              Check-in QR Code
+                            </p>
+                            <div className="bg-white p-4 rounded-xl inline-block shadow-lg">
+                              <QRCodeSVG
+                                value={reservation.qrCode}
+                                size={200}
+                                level="H"
+                                includeMargin={true}
+                                fgColor="#1e40af"
+                              />
+                            </div>
+                            <p className="text-xs text-gray-600 mt-3 font-medium">📱 Scan this code at the parking spot to check in</p>
+                            <p className="text-xs text-gray-500 mt-1 font-mono break-all">{reservation.qrCode}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-4 md:mt-0 md:ml-4">
+                    <div className="mt-4 md:mt-0 md:ml-4 flex flex-col gap-2">
+                      {reservation.qrCode && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(reservation.qrCode || '');
+                            notification.success('QR Code copied!', 'The QR code has been copied to your clipboard');
+                          }}
+                        >
+                          Copy QR Code
+                        </Button>
+                      )}
                       <Button
                         variant="danger"
                         size="sm"

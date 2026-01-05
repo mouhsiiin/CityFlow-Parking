@@ -8,9 +8,7 @@ import {
   Wallet as WalletIcon,
   ArrowDownCircle,
   ArrowUpCircle,
-  TrendingUp,
   TrendingDown,
-  Eye,
   Filter,
   Download,
   Shield,
@@ -140,34 +138,6 @@ export const Wallet: React.FC = () => {
     }
   };
 
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
-      case 'deposit':
-        return <ArrowDownCircle className="h-5 w-5 text-green-500" />;
-      case 'withdrawal':
-        return <ArrowUpCircle className="h-5 w-5 text-red-500" />;
-      case 'payment':
-        return <TrendingDown className="h-5 w-5 text-orange-500" />;
-      case 'refund':
-        return <TrendingUp className="h-5 w-5 text-blue-500" />;
-      default:
-        return <WalletIcon className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'confirmed':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'failed':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -214,13 +184,6 @@ export const Wallet: React.FC = () => {
           >
             <ArrowDownCircle className="mr-2 h-5 w-5" />
             Add Funds
-          </Button>
-          <Button
-            onClick={() => setShowWithdrawModal(true)}
-            className="flex-1 bg-white/20 hover:bg-white/30 text-white border-2 border-white/50"
-          >
-            <ArrowUpCircle className="mr-2 h-5 w-5" />
-            Withdraw
           </Button>
         </div>
       </Card>

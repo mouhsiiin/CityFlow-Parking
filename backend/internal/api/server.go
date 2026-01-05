@@ -7,26 +7,35 @@ import (
 	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/fabric"
 	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/handlers"
 	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/api/middleware"
+	"github.com/mouhsiiin/CityFlow-Parking/backend/internal/security"
 )
 
 // Server represents the API server
 type Server struct {
-	router       *gin.Engine
-	config       *config.Config
-	fabricClient *fabric.Client
+	router          *gin.Engine
+	config          *config.Config
+	fabricClient    *fabric.Client
+	securityMonitor *security.Monitor
 }
 
 // NewServer creates a new API server
 func NewServer(cfg *config.Config, fabricClient *fabric.Client) *Server {
 	router := gin.Default()
 
+	// Initialize security monitor (store up to 10000 events)
+	securityMonitor := security.NewMonitor(10000)
+
 	// Add CORS middleware
 	router.Use(middleware.CORSMiddleware())
 
+	// Add security monitoring middleware
+	router.Use(security.MonitoringMiddleware(securityMonitor))
+
 	server := &Server{
-		router:       router,
-		config:       cfg,
-		fabricClient: fabricClient,
+		router:          router,
+		config:          cfg,
+		fabricClient:    fabricClient,
+		securityMonitor: securityMonitor,
 	}
 
 	server.setupRoutes()
@@ -42,6 +51,7 @@ func (s *Server) setupRoutes() {
 	parkingHandler := handlers.NewParkingHandler(s.fabricClient)
 	chargingHandler := handlers.NewChargingHandler(s.fabricClient)
 	walletHandler := handlers.NewWalletHandler(s.fabricClient)
+	securityHandler := handlers.NewSecurityHandler(s.securityMonitor)
 
 	// Health check
 	s.router.GET("/health", func(c *gin.Context) {
@@ -157,6 +167,20 @@ func (s *Server) setupRoutes() {
 			payment.POST("/process", walletHandler.ProcessPayment)
 			payment.POST("/refund/:id", walletHandler.RefundPayment)
 			payment.GET("/receipt/:id", walletHandler.GetPaymentReceipt)
+		}
+
+		// Security monitoring routes (admin only)
+		securityRoutes := v1.Group("/security")
+		securityRoutes.Use(middleware.AuthMiddleware(s.fabricClient))
+		securityRoutes.Use(middleware.AdminMiddleware())
+		{
+			securityRoutes.GET("/dashboard", securityHandler.GetDashboard)
+			securityRoutes.GET("/events", securityHandler.GetEvents)
+			securityRoutes.GET("/events/range", securityHandler.GetEventsByTimeRange)
+			securityRoutes.GET("/alerts", securityHandler.GetAlerts)
+			securityRoutes.PUT("/alerts/:id/acknowledge", securityHandler.AcknowledgeAlert)
+			securityRoutes.GET("/stats", securityHandler.GetStats)
+			securityRoutes.GET("/health", securityHandler.GetSystemHealth)
 		}
 	}
 }

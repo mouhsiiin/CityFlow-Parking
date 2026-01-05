@@ -119,22 +119,26 @@ export const parkingBookingService = {
     startTime: string;
     endTime: string;
   }): Promise<Reservation> => {
-    return apiClient.post<Reservation>(API_ENDPOINTS.CREATE_RESERVATION, data);
+    const response = await apiClient.post<{ booking?: any }>(API_ENDPOINTS.CREATE_RESERVATION, data);
+    return parkingBookingService.mapBooking(response.booking || response);
   },
 
   checkIn: async (data: { bookingId: string }): Promise<Reservation> => {
-    return apiClient.post<Reservation>(API_ENDPOINTS.CHECKIN, data);
+    const response = await apiClient.post<{ booking?: any }>(API_ENDPOINTS.CHECKIN, data);
+    return parkingBookingService.mapBooking(response.booking || response);
   },
 
   checkOut: async (data: { bookingId: string }): Promise<Reservation> => {
-    return apiClient.post<Reservation>(API_ENDPOINTS.CHECKOUT, data);
+    const response = await apiClient.post<{ booking?: any }>(API_ENDPOINTS.CHECKOUT, data);
+    return parkingBookingService.mapBooking(response.booking || response);
   },
 
   extendBooking: async (data: {
     bookingId: string;
     newEndTime: string;
   }): Promise<Reservation> => {
-    return apiClient.post<Reservation>(API_ENDPOINTS.EXTEND_BOOKING, data);
+    const response = await apiClient.post<{ booking?: any }>(API_ENDPOINTS.EXTEND_BOOKING, data);
+    return parkingBookingService.mapBooking(response.booking || response);
   },
 
   cancelBooking: async (bookingId: string): Promise<void> => {
@@ -142,20 +146,50 @@ export const parkingBookingService = {
   },
 
   getUserBookings: async (): Promise<Reservation[]> => {
-    return apiClient.get<Reservation[]>(API_ENDPOINTS.USER_BOOKINGS);
+    const response = await apiClient.get<{ bookings: any[] }>(API_ENDPOINTS.USER_BOOKINGS);
+    const bookings = response.bookings || [];
+    return bookings.map(parkingBookingService.mapBooking);
   },
 
   getBooking: async (bookingId: string): Promise<Reservation> => {
-    return apiClient.get<Reservation>(API_ENDPOINTS.BOOKING_BY_ID(bookingId));
+    const response = await apiClient.get<{ booking?: any }>(API_ENDPOINTS.BOOKING_BY_ID(bookingId));
+    return parkingBookingService.mapBooking(response.booking || response);
   },
 
   getActiveBookings: async (): Promise<Reservation[]> => {
-    return apiClient.get<Reservation[]>(API_ENDPOINTS.ACTIVE_BOOKINGS);
+    const response = await apiClient.get<{ bookings: any[] }>(API_ENDPOINTS.ACTIVE_BOOKINGS);
+    const bookings = response.bookings || [];
+    return bookings.map(parkingBookingService.mapBooking);
   },
 
   getBookingHistory: async (): Promise<Reservation[]> => {
-    return apiClient.get<Reservation[]>(API_ENDPOINTS.BOOKING_HISTORY);
+    const response = await apiClient.get<{ bookings: any[] }>(API_ENDPOINTS.BOOKING_HISTORY);
+    const bookings = response.bookings || [];
+    return bookings.map(parkingBookingService.mapBooking);
   },
+
+  // Helper to map blockchain booking data to frontend Reservation type
+  mapBooking: (booking: any): Reservation => ({
+    id: booking.bookingId || booking.id,
+    spotId: booking.spotId,
+    userId: booking.userId,
+    startTime: booking.startTime,
+    endTime: booking.endTime,
+    actualCheckIn: booking.actualCheckIn,
+    actualCheckOut: booking.actualCheckOut,
+    duration: booking.duration,
+    pricePerHour: booking.pricePerHour,
+    totalCost: booking.totalCost,
+    status: booking.status,
+    qrCode: booking.qrCode,
+    paymentId: booking.paymentId,
+    transactionId: booking.transactionId,
+    blockchainTxHash: booking.transactionId || booking.bookingId,
+    createdAt: booking.createdAt,
+    updatedAt: booking.updatedAt,
+    blockNumber: booking.blockNumber,
+    endorsingOrgs: booking.endorsingOrgs,
+  }),
 };
 
 // ==================== CHARGING STATION SERVICES ====================
@@ -200,18 +234,21 @@ export const chargingSessionService = {
     stationId: string;
     vehicleId?: string;
   }): Promise<ChargingSession> => {
-    return apiClient.post<ChargingSession>(API_ENDPOINTS.START_CHARGING, data);
+    const response = await apiClient.post<{ session?: any }>(API_ENDPOINTS.START_CHARGING, data);
+    return chargingSessionService.mapSession(response.session || response);
   },
 
   updateSession: async (sessionId: string, data: {
     energyConsumed?: number;
     currentCost?: number;
   }): Promise<ChargingSession> => {
-    return apiClient.put<ChargingSession>(API_ENDPOINTS.UPDATE_CHARGING(sessionId), data);
+    const response = await apiClient.put<{ session?: any }>(API_ENDPOINTS.UPDATE_CHARGING(sessionId), data);
+    return chargingSessionService.mapSession(response.session || response);
   },
 
   stopSession: async (data: { sessionId: string }): Promise<ChargingSession> => {
-    return apiClient.post<ChargingSession>(API_ENDPOINTS.STOP_CHARGING, data);
+    const response = await apiClient.post<{ session?: any }>(API_ENDPOINTS.STOP_CHARGING, data);
+    return chargingSessionService.mapSession(response.session || response);
   },
 
   cancelSession: async (sessionId: string): Promise<void> => {
@@ -219,30 +256,58 @@ export const chargingSessionService = {
   },
 
   getUserSessions: async (): Promise<ChargingSession[]> => {
-    return apiClient.get<ChargingSession[]>(API_ENDPOINTS.USER_SESSIONS);
+    const response = await apiClient.get<{ sessions: any[] }>(API_ENDPOINTS.USER_SESSIONS);
+    const sessions = response.sessions || [];
+    return sessions.map(chargingSessionService.mapSession);
   },
 
   getSession: async (sessionId: string): Promise<ChargingSession> => {
-    return apiClient.get<ChargingSession>(API_ENDPOINTS.CHARGING_SESSION_BY_ID(sessionId));
+    const response = await apiClient.get<{ session?: any }>(API_ENDPOINTS.CHARGING_SESSION_BY_ID(sessionId));
+    return chargingSessionService.mapSession(response.session || response);
   },
 
   getActiveSessions: async (): Promise<ChargingSession[]> => {
-    return apiClient.get<ChargingSession[]>(API_ENDPOINTS.ACTIVE_CHARGING_SESSIONS);
+    const response = await apiClient.get<{ sessions: any[] }>(API_ENDPOINTS.ACTIVE_CHARGING_SESSIONS);
+    const sessions = response.sessions || [];
+    return sessions.map(chargingSessionService.mapSession);
   },
 
   getSessionHistory: async (): Promise<ChargingSession[]> => {
-    return apiClient.get<ChargingSession[]>(API_ENDPOINTS.CHARGING_HISTORY);
+    const response = await apiClient.get<{ sessions: any[] }>(API_ENDPOINTS.CHARGING_HISTORY);
+    const sessions = response.sessions || [];
+    return sessions.map(chargingSessionService.mapSession);
   },
 
   getEnergyStats: async (): Promise<any> => {
     return apiClient.get<any>(API_ENDPOINTS.ENERGY_STATS);
   },
+
+  // Helper to map blockchain session data to frontend ChargingSession type
+  mapSession: (session: any): ChargingSession => ({
+    id: session.sessionId || session.id,
+    userId: session.userId,
+    stationId: session.stationId,
+    startTime: session.startTime,
+    endTime: session.endTime,
+    duration: session.duration,
+    energyConsumed: session.energyConsumed,
+    pricePerKwh: session.pricePerKwh,
+    currentCost: session.currentCost,
+    totalCost: session.totalCost,
+    status: session.status,
+    paymentId: session.paymentId,
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
+    blockchainTxHash: session.transactionId || session.sessionId,
+    blockNumber: session.blockNumber,
+    endorsingOrgs: session.endorsingOrgs,
+  }),
 };
 
 // ==================== WALLET SERVICES ====================
 export const walletService = {
   createWallet: async (): Promise<WalletInfo> => {
-    const response = await apiClient.post<{ walletId: string; message: string }>(API_ENDPOINTS.CREATE_WALLET);
+    await apiClient.post<{ walletId: string; message: string }>(API_ENDPOINTS.CREATE_WALLET);
     // After creating, fetch the wallet details
     return walletService.getWallet();
   },
@@ -284,9 +349,15 @@ export const walletService = {
       amount: tx.amount,
       description: tx.description || '',
       timestamp: tx.timestamp,
+      blockchainTxHash: tx.transactionId || tx.id, // Use transactionId as blockchain hash
       balanceBefore: tx.balanceBefore,
       balanceAfter: tx.balanceAfter,
-      status: 'completed',
+      status: tx.status || 'confirmed',
+      paymentId: tx.paymentId,
+      reservationId: tx.reservationId || tx.bookingId,
+      sessionId: tx.sessionId,
+      blockNumber: tx.blockNumber,
+      endorsingOrgs: tx.endorsingOrgs,
     }));
   },
 
@@ -302,9 +373,15 @@ export const walletService = {
       amount: tx.amount,
       description: tx.description || '',
       timestamp: tx.timestamp,
+      blockchainTxHash: tx.transactionId || tx.id,
       balanceBefore: tx.balanceBefore,
       balanceAfter: tx.balanceAfter,
-      status: 'completed',
+      status: tx.status || 'confirmed',
+      paymentId: tx.paymentId,
+      reservationId: tx.reservationId || tx.bookingId,
+      sessionId: tx.sessionId,
+      blockNumber: tx.blockNumber,
+      endorsingOrgs: tx.endorsingOrgs,
     };
   },
 
@@ -326,16 +403,36 @@ export const paymentService = {
     referenceId: string;
     description: string;
   }): Promise<Payment> => {
-    return apiClient.post<Payment>(API_ENDPOINTS.PROCESS_PAYMENT, data);
+    const response = await apiClient.post<{ payment?: any }>(API_ENDPOINTS.PROCESS_PAYMENT, data);
+    return paymentService.mapPayment(response.payment || response);
   },
 
   refundPayment: async (paymentId: string, data?: { reason?: string }): Promise<Payment> => {
-    return apiClient.post<Payment>(API_ENDPOINTS.REFUND_PAYMENT(paymentId), data);
+    const response = await apiClient.post<{ payment?: any }>(API_ENDPOINTS.REFUND_PAYMENT(paymentId), data);
+    return paymentService.mapPayment(response.payment || response);
   },
 
   getPaymentReceipt: async (paymentId: string): Promise<any> => {
-    return apiClient.get<any>(API_ENDPOINTS.PAYMENT_RECEIPT(paymentId));
+    const response = await apiClient.get<{ receipt?: any }>(API_ENDPOINTS.PAYMENT_RECEIPT(paymentId));
+    return response.receipt || response;
   },
+
+  // Helper to map blockchain payment data to frontend Payment type
+  mapPayment: (payment: any): Payment => ({
+    id: payment.paymentId || payment.id,
+    walletId: payment.walletId,
+    userId: payment.userId,
+    amount: payment.amount,
+    type: payment.type,
+    referenceId: payment.referenceId,
+    status: payment.status,
+    description: payment.description || '',
+    createdAt: payment.createdAt,
+    completedAt: payment.completedAt,
+    blockchainTxHash: payment.transactionId || payment.paymentId,
+    blockNumber: payment.blockNumber,
+    endorsingOrgs: payment.endorsingOrgs,
+  }),
 };
 
 // ==================== EXPORT ALL ====================

@@ -14,7 +14,8 @@ import {
   ParkingManagement,
   ChargingManagement,
   ParkingSpotForm,
-  ChargingStationForm
+  ChargingStationForm,
+  SecurityDashboard
 } from './pages';
 
 function App() {
@@ -125,6 +126,15 @@ function App() {
               <AdminRoute>
                 <Navbar />
                 <ChargingStationForm />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/security"
+            element={
+              <AdminRoute>
+                <Navbar />
+                <SecurityDashboard />
               </AdminRoute>
             }
           />

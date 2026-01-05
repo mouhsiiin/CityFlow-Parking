@@ -256,7 +256,19 @@ export const walletService = {
       await simulateDelay(500);
       return mockWalletInfo;
     }
-    return apiClient.get<WalletInfo>(API_ENDPOINTS.WALLET);
+    const response = await apiClient.get<{ wallet: any }>(API_ENDPOINTS.WALLET);
+    const wallet = response.wallet;
+    
+    // Map blockchain wallet structure to frontend WalletInfo
+    return {
+      id: wallet.walletId,
+      userId: wallet.userId,
+      address: wallet.walletId, // Use walletId as address
+      balance: wallet.balance || 0,
+      currency: wallet.currency || 'USD',
+      createdAt: wallet.createdAt,
+      lastUpdated: wallet.lastUpdated,
+    };
   },
 
   async getTransactions(): Promise<Transaction[]> {

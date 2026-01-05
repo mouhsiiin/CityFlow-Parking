@@ -36,50 +36,38 @@ echo -e "${GREEN}Prerequisites check passed!${NC}"
 
 # Create directories if they don't exist
 echo -e "\n${YELLOW}Creating required directories...${NC}"
-mkdir -p organizations/fabric-ca/org1
-mkdir -p organizations/fabric-ca/org2
-mkdir -p organizations/fabric-ca/org3
-mkdir -p organizations/fabric-ca/ordererOrg
 mkdir -p channel-artifacts
-mkdir -p peercfg
+mkdir -p crypto-config
 
 # Stop any existing containers
 echo -e "\n${YELLOW}Stopping any existing containers...${NC}"
 docker-compose down -v 2>/dev/null || true
 
-# Remove old artifacts
-echo -e "\n${YELLOW}Cleaning up old artifacts...${NC}"
-rm -rf organizations/peerOrganizations
-rm -rf organizations/ordererOrganizations
-rm -rf channel-artifacts/*
-rm -rf system-genesis-block
+# Check if crypto materials exist
+if [ ! -d "crypto-config/peerOrganizations" ] || [ ! -d "crypto-config/ordererOrganizations" ]; then
+    echo -e "\n${YELLOW}Generating crypto materials...${NC}"
+    ../bin/cryptogen generate --config=./crypto-config.yaml
+    
+    # Create symlinks for configtxgen to find the certificates
+    echo -e "\n${YELLOW}Setting up crypto material symlinks...${NC}"
+    mkdir -p /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto
+    ln -sf $(pwd)/crypto-config/peerOrganizations /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/peerOrganizations 2>/dev/null || true
+    ln -sf $(pwd)/crypto-config/ordererOrganizations /opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/ordererOrganizations 2>/dev/null || true
+fi
 
-# Start CA containers first
-echo -e "\n${YELLOW}Starting Certificate Authorities...${NC}"
-docker-compose up -d ca_org1 ca_org2 ca_org3 ca_orderer
-
-# Wait for CAs to start properly
-echo -e "\n${YELLOW}Waiting for CAs to start...${NC}"
-sleep 10
-
-# Check if CAs are ready
-echo -e "\n${YELLOW}Checking CA health...${NC}"
-for i in {1..30}; do
-    if docker logs ca_org1 2>&1 | grep -q "Listening on"; then
-        echo -e "${GREEN}CA Org1 is ready${NC}"
-        break
-    fi
-    echo "Waiting for CA Org1... ($i/30)"
-    sleep 2
-done
-
-# Generate crypto materials using the CA
-echo -e "\n${YELLOW}Generating crypto materials...${NC}"
-./scripts/registerEnroll.sh
-
-# Generate genesis block and channel configuration
-echo -e "\n${YELLOW}Generating channel artifacts...${NC}"
-./scripts/createChannelTx.sh
+# Generate channel artifacts if they don't exist
+if [ ! -f "channel-artifacts/user-channel.block" ]; then
+    echo -e "\n${YELLOW}Generating channel artifacts...${NC}"
+    
+    # Set environment variables for configtxgen
+    export FABRIC_CFG_PATH=${PWD}
+    
+    # Generate channel creation transactions
+    ../bin/configtxgen -profile UserChannel -outputCreateChannelTx ./channel-artifacts/user-channel.tx -channelID user-channel
+    ../bin/configtxgen -profile ParkingChannel -outputCreateChannelTx ./channel-artifacts/parking-channel.tx -channelID parking-channel
+    ../bin/configtxgen -profile ChargingChannel -outputCreateChannelTx ./channel-artifacts/charging-channel.tx -channelID charging-channel
+    ../bin/configtxgen -profile WalletChannel -outputCreateChannelTx ./channel-artifacts/wallet-channel.tx -channelID wallet-channel
+fi
 
 # Start all containers
 echo -e "\n${YELLOW}Starting all network containers...${NC}"
@@ -87,7 +75,7 @@ docker-compose up -d
 
 # Wait for network to stabilize
 echo -e "\n${YELLOW}Waiting for network to stabilize...${NC}"
-sleep 10
+sleep 15
 
 # Create channels
 echo -e "\n${YELLOW}Creating channels...${NC}"
@@ -104,14 +92,13 @@ echo -e "\n${GREEN}========================================${NC}"
 echo -e "${GREEN}  Network started successfully!         ${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo -e "\n${YELLOW}Network components:${NC}"
-echo -e "  - 3 Orderers (Raft consensus)"
-echo -e "  - 3 Organizations with 5 Peers total"
-echo -e "  - 5 CouchDB instances"
+echo -e "  - 1 Orderer"
+echo -e "  - 4 Organizations with 4 Peers"
 echo -e "  - 4 Channels (user, parking, charging, wallet)"
 echo -e "  - 4 Chaincodes deployed"
 echo -e "\n${YELLOW}Access points:${NC}"
-echo -e "  - CouchDB Fauxton: http://localhost:5984/_utils (admin/adminpw)"
-echo -e "  - Peer0 Org1: localhost:7051"
-echo -e "  - Peer0 Org2: localhost:9051"
-echo -e "  - Peer0 Org3: localhost:11051"
+echo -e "  - Peer0 ParkingOperator: localhost:7051"
+echo -e "  - Peer0 ChargingStation: localhost:9051"
+echo -e "  - Peer0 UserService: localhost:11051"
+echo -e "  - Peer0 CityManagement: localhost:13051"
 echo -e "  - Orderer: localhost:7050"

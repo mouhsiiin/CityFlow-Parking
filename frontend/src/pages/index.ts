@@ -10,4 +10,6 @@ export { default as ParkingManagement } from './ParkingManagement';
 export { default as ChargingManagement } from './ChargingManagement';
 export { default as ParkingSpotForm } from './ParkingSpotForm';
 export { default as ChargingStationForm } from './ChargingStationForm';
+export { default as SecurityDashboard } from './SecurityDashboard';
+
 

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CityFlow Security Monitor - Mini SOC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .card h2 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .health-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .health-healthy {
+            background: #28a745;
+            color: white;
+        }
+
+        .health-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .health-critical {
+            background: #dc3545;
+            color: white;
+        }
+
+        .alert-item {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .alert-critical {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+
+        .alert-item strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .alert-item small {
+            color: #666;
+        }
+
+        .event-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            font-size: 0.9em;
+        }
+
+        .event-warning {
+            border-left-color: #ffc107;
+        }
+
+        .event-critical {
+            border-left-color: #dc3545;
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .event-type {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .event-time {
+            color: #999;
+            font-size: 0.85em;
+        }
+
+        .refresh-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            display: block;
+            margin: 20px auto;
+            transition: all 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            margin: 50px 0;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .chart-container {
+            height: 200px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .bar {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0 5px;
+            border-radius: 5px 5px 0 0;
+            min-height: 20px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .bar:hover {
+            opacity: 0.8;
+        }
+
+        .bar-label {
+            text-align: center;
+            font-size: 0.8em;
+            margin-top: 5px;
+            color: #666;
+        }
+
+        .auto-refresh {
+            text-align: center;
+            color: white;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            vertical-align: middle;
+            margin: 0 10px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #28a745;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ CityFlow Security Monitor</h1>
+        
+        <div class="auto-refresh">
+            <label>
+                Auto Refresh
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoRefresh" checked>
+                    <span class="slider"></span>
+                </label>
+                <span id="refreshTimer">Next update in 10s</span>
+            </label>
+        </div>
+
+        <button class="refresh-btn" onclick="loadDashboard()">🔄 Refresh Now</button>
+
+        <div id="error-message" class="error" style="display: none;"></div>
+        <div id="loading" class="loading">Loading security data...</div>
+
+        <div id="dashboard" style="display: none;">
+            <!-- System Health -->
+            <div class="grid">
+                <div class="card">
+                    <h2>🏥 System Health</h2>
+                    <div class="stat">
+                        <span class="stat-label">Status:</span>
+                        <span id="healthStatus" class="health-badge">Loading...</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Health Score:</span>
+                        <span id="healthScore" class="stat-value">-</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>📊 Event Statistics</h2>
+                    <div class="stat">
+                        <span class="stat-label">Total Events:</span>
+                        <span id="totalEvents" class="stat-value">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Failed Logins:</span>
+                        <span id="failedLogins" class="stat-value">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Unauthorized:</span>
+                        <span id="unauthorized" class="stat-value">0</span>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>🚨 Active Alerts</h2>
+                    <div class="stat">
+                        <span class="stat-label">Active Alerts:</span>
+                        <span id="activeAlerts" class="stat-value">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Total Alerts:</span>
+                        <span id="totalAlerts" class="stat-value">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Types Chart -->
+            <div class="card">
+                <h2>📈 Event Types Distribution</h2>
+                <div id="eventTypesChart" class="chart-container"></div>
+            </div>
+
+            <!-- Recent Alerts -->
+            <div class="card">
+                <h2>⚠️ Recent Alerts</h2>
+                <div id="alertsList"></div>
+            </div>
+
+            <!-- Recent Events -->
+            <div class="card">
+                <h2>📝 Recent Security Events (Last 50)</h2>
+                <div id="eventsList" class="event-list"></div>
+            </div>
+
+            <!-- Top IPs -->
+            <div class="card">
+                <h2>🌐 Top IP Addresses</h2>
+                <div id="topIPs"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080/api/v1';
+        let autoRefreshEnabled = true;
+        let refreshCountdown = 10;
+        let countdownInterval;
+        let refreshInterval;
+
+        // Get auth token from localStorage (assume admin is logged in)
+        function getAuthToken() {
+            return localStorage.getItem('authToken') || '';
+        }
+
+        async function loadDashboard() {
+            const token = getAuthToken();
+            
+            if (!token) {
+                showError('Please login as admin to view security dashboard. Token not found in localStorage.');
+                return;
+            }
+
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error-message').style.display = 'none';
+
+                // Fetch dashboard data
+                const dashboardResponse = await fetch(`${API_BASE}/security/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!dashboardResponse.ok) {
+                    throw new Error(`Failed to fetch dashboard: ${dashboardResponse.status}`);
+                }
+
+                const dashboardData = await dashboardResponse.json();
+                const stats = dashboardData.data.stats;
+                const alerts = dashboardData.data.alerts || [];
+
+                // Fetch recent events
+                const eventsResponse = await fetch(`${API_BASE}/security/events?limit=50`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!eventsResponse.ok) {
+                    throw new Error(`Failed to fetch events: ${eventsResponse.status}`);
+                }
+
+                const eventsData = await eventsResponse.json();
+                const events = eventsData.data.events || [];
+
+                // Fetch system health
+                const healthResponse = await fetch(`${API_BASE}/security/health`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const healthData = healthResponse.ok ? await healthResponse.json() : null;
+
+                // Update UI
+                updateDashboard(stats, alerts, events, healthData);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showError(`Error: ${error.message}. Make sure you're logged in as admin and the backend is running.`);
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function updateDashboard(stats, alerts, events, healthData) {
+            // System Health
+            if (healthData && healthData.data) {
+                const health = healthData.data.health;
+                const healthBadge = document.getElementById('healthStatus');
+                healthBadge.textContent = health.status.toUpperCase();
+                healthBadge.className = `health-badge health-${health.status}`;
+                document.getElementById('healthScore').textContent = health.score;
+            }
+
+            // Statistics
+            document.getElementById('totalEvents').textContent = stats.totalEvents || 0;
+            document.getElementById('failedLogins').textContent = stats.failedLogins || 0;
+            document.getElementById('unauthorized').textContent = stats.unauthorizedAccess || 0;
+            document.getElementById('activeAlerts').textContent = stats.activeAlerts || 0;
+            document.getElementById('totalAlerts').textContent = stats.alertCount || 0;
+
+            // Event Types Chart
+            updateEventTypesChart(stats.eventsByType || {});
+
+            // Alerts List
+            updateAlertsList(alerts);
+
+            // Events List
+            updateEventsList(events);
+
+            // Top IPs
+            updateTopIPs(stats.topIpAddresses || []);
+        }
+
+        function updateEventTypesChart(eventsByType) {
+            const chartContainer = document.getElementById('eventTypesChart');
+            chartContainer.innerHTML = '';
+
+            const maxCount = Math.max(...Object.values(eventsByType), 1);
+
+            for (const [type, count] of Object.entries(eventsByType)) {
+                const height = (count / maxCount) * 100;
+                const barContainer = document.createElement('div');
+                barContainer.style.flex = '1';
+                barContainer.style.display = 'flex';
+                barContainer.style.flexDirection = 'column';
+                barContainer.style.alignItems = 'center';
+                barContainer.style.justifyContent = 'flex-end';
+                
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = `${height}%`;
+                bar.style.width = '100%';
+                bar.title = `${type}: ${count}`;
+                
+                const label = document.createElement('div');
+                label.className = 'bar-label';
+                label.textContent = type.replace('_', ' ');
+                label.title = `${count} events`;
+                
+                const countLabel = document.createElement('div');
+                countLabel.style.fontSize = '0.9em';
+                countLabel.style.fontWeight = 'bold';
+                countLabel.style.marginBottom = '5px';
+                countLabel.textContent = count;
+                
+                barContainer.appendChild(countLabel);
+                barContainer.appendChild(bar);
+                barContainer.appendChild(label);
+                chartContainer.appendChild(barContainer);
+            }
+        }
+
+        function updateAlertsList(alerts) {
+            const alertsList = document.getElementById('alertsList');
+            
+            if (alerts.length === 0) {
+                alertsList.innerHTML = '<p style="color: #28a745; text-align: center; padding: 20px;">✅ No active alerts</p>';
+                return;
+            }
+
+            alertsList.innerHTML = '';
+            alerts.slice(0, 10).forEach(alert => {
+                const alertItem = document.createElement('div');
+                alertItem.className = `alert-item ${alert.severity === 'CRITICAL' || alert.severity === 'HIGH' ? 'alert-critical' : ''}`;
+                alertItem.innerHTML = `
+                    <strong>${alert.alertType.replace(/_/g, ' ')}</strong>
+                    ${alert.message}
+                    <br><small>Severity: ${alert.severity} | ${new Date(alert.timestamp).toLocaleString()}</small>
+                `;
+                alertsList.appendChild(alertItem);
+            });
+        }
+
+        function updateEventsList(events) {
+            const eventsList = document.getElementById('eventsList');
+            
+            if (events.length === 0) {
+                eventsList.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">No events recorded yet</p>';
+                return;
+            }
+
+            eventsList.innerHTML = '';
+            events.forEach(event => {
+                const eventItem = document.createElement('div');
+                let className = 'event-item';
+                if (event.severity === 'WARNING' || event.severity === 'HIGH') {
+                    className += ' event-warning';
+                } else if (event.severity === 'CRITICAL') {
+                    className += ' event-critical';
+                }
+                
+                eventItem.className = className;
+                eventItem.innerHTML = `
+                    <div class="event-header">
+                        <span class="event-type">${event.eventType.replace(/_/g, ' ')}</span>
+                        <span class="event-time">${new Date(event.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    <div>${event.message}</div>
+                    <small>IP: ${event.ipAddress} | ${event.method} ${event.endpoint} (${event.statusCode})</small>
+                `;
+                eventsList.appendChild(eventItem);
+            });
+        }
+
+        function updateTopIPs(topIPs) {
+            const topIPsContainer = document.getElementById('topIPs');
+            
+            if (topIPs.length === 0) {
+                topIPsContainer.innerHTML = '<p style="text-align: center; color: #999;">No IP data available</p>';
+                return;
+            }
+
+            topIPsContainer.innerHTML = '';
+            topIPs.slice(0, 5).forEach(ipStats => {
+                const ipItem = document.createElement('div');
+                ipItem.className = 'stat';
+                ipItem.innerHTML = `
+                    <span class="stat-label">${ipStats.ipAddress}</span>
+                    <span style="color: #667eea;">${ipStats.eventCount} events ${ipStats.failedAuth > 0 ? '⚠️ ' + ipStats.failedAuth + ' failed auth' : ''}</span>
+                `;
+                topIPsContainer.appendChild(ipItem);
+            });
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function startCountdown() {
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            refreshCountdown = 10;
+            countdownInterval = setInterval(() => {
+                refreshCountdown--;
+                document.getElementById('refreshTimer').textContent = `Next update in ${refreshCountdown}s`;
+                
+                if (refreshCountdown <= 0) {
+                    refreshCountdown = 10;
+                }
+            }, 1000);
+        }
+
+        function setupAutoRefresh() {
+            const checkbox = document.getElementById('autoRefresh');
+            
+            checkbox.addEventListener('change', (e) => {
+                autoRefreshEnabled = e.target.checked;
+                
+                if (autoRefreshEnabled) {
+                    startRefreshInterval();
+                    startCountdown();
+                } else {
+                    if (refreshInterval) clearInterval(refreshInterval);
+                    if (countdownInterval) clearInterval(countdownInterval);
+                    document.getElementById('refreshTimer').textContent = 'Auto-refresh disabled';
+                }
+            });
+
+            if (autoRefreshEnabled) {
+                startRefreshInterval();
+                startCountdown();
+            }
+        }
+
+        function startRefreshInterval() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            
+            refreshInterval = setInterval(() => {
+                if (autoRefreshEnabled) {
+                    loadDashboard();
+                }
+            }, 10000); // Refresh every 10 seconds
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            loadDashboard();
+            setupAutoRefresh();
+        });
+    </script>
+</body>
+</html>

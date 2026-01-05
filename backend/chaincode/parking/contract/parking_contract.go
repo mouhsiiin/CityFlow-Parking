@@ -34,8 +34,8 @@ type Booking struct {
 	SpotID         string  `json:"spotId"`
 	StartTime      string  `json:"startTime"`
 	EndTime        string  `json:"endTime"`
-	ActualCheckIn  string  `json:"actualCheckIn,omitempty"`
-	ActualCheckOut string  `json:"actualCheckOut,omitempty"`
+	ActualCheckIn  string  `json:"actualCheckIn"`
+	ActualCheckOut string  `json:"actualCheckOut"`
 	Duration       int     `json:"duration"` // hours
 	PricePerHour   float64 `json:"pricePerHour"`
 	TotalCost      float64 `json:"totalCost"`

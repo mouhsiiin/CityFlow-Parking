@@ -88,6 +88,42 @@ class AdminService {
     return apiClient.get(`/api/v1/charging/stations/${stationId}`);
   }
 
+  // ==================== Security Monitoring ====================
+  
+  async getSecurityDashboard(since?: string) {
+    const params = since ? { since } : {};
+    return apiClient.get('/api/v1/security/dashboard', params);
+  }
+
+  async getSecurityEvents(params?: {
+    limit?: number;
+    type?: string;
+    severity?: string;
+  }) {
+    return apiClient.get('/api/v1/security/events', params);
+  }
+
+  async getSecurityEventsByTimeRange(start: string, end: string) {
+    return apiClient.get('/api/v1/security/events/range', { start, end });
+  }
+
+  async getSecurityAlerts(activeOnly: boolean = true) {
+    return apiClient.get('/api/v1/security/alerts', { active: activeOnly.toString() });
+  }
+
+  async acknowledgeSecurityAlert(alertId: string) {
+    return apiClient.put(`/api/v1/security/alerts/${alertId}/acknowledge`);
+  }
+
+  async getSecurityStats(since?: string) {
+    const params = since ? { since } : {};
+    return apiClient.get('/api/v1/security/stats', params);
+  }
+
+  async getSystemHealth() {
+    return apiClient.get('/api/v1/security/health');
+  }
+
   // ==================== Statistics ====================
   
 async getDashboardStats() {

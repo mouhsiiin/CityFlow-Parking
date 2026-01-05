@@ -246,3 +246,67 @@ export interface ProcessPaymentRequest {
 export interface RefundPaymentRequest {
   reason?: string;
 }
+
+// ==================== Security Monitoring Types ====================
+
+export type EventType = 'login_attempt' | 'unauthorized_access' | 'data_access' | 'system_event' | 'api_call' | 'transaction' | '';
+export type Severity = 'low' | 'medium' | 'high' | 'critical' | '';
+
+export interface SecurityEvent {
+  id: string;
+  timestamp: string;
+  eventType: EventType;
+  severity: Severity;
+  userId?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  resource?: string;
+  action?: string;
+  result?: string;
+  message: string;
+  metadata?: Record<string, any>;
+}
+
+export interface SecurityAlert {
+  id: string;
+  timestamp: string;
+  alertType: string;
+  severity: Severity;
+  message: string;
+  details: string;
+  affectedResource?: string;
+  acknowledged: boolean;
+  acknowledgedBy?: string;
+  acknowledgedAt?: string;
+}
+
+export interface SecurityStats {
+  totalEvents: number;
+  failedLogins: number;
+  unauthorizedAccess: number;
+  activeAlerts: number;
+  eventsByType: Record<string, number>;
+  eventsBySeverity?: Record<string, number>;
+  recentActivity?: number;
+}
+
+export interface SecurityHealth {
+  status: 'healthy' | 'warning' | 'critical';
+  score: number;
+  lastChecked: string;
+}
+
+export interface SecurityDashboardData {
+  stats: SecurityStats;
+  alerts: SecurityAlert[];
+}
+
+export interface SecuritySystemHealth {
+  health: SecurityHealth;
+  metrics: {
+    totalEvents: number;
+    failedLogins: number;
+    unauthorizedAccess: number;
+    activeAlerts: number;
+  };
+}

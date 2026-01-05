@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import { walletService } from '../services/apiService';
-import { Card, TransactionDetailsModal, BlockchainTransactionCard } from '../components';
+import { Card, TransactionDetailsModal, BlockchainTransactionCard, BlockchainStats } from '../components';
 import type { Transaction } from '../types';
 import {
   ArrowDownCircle,
@@ -200,6 +200,9 @@ export const TransactionHistory: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Blockchain Statistics */}
+      <BlockchainStats transactions={filteredTransactions} />
 
       {/* Summary Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
