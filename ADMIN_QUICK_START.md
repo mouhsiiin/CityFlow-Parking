@@ -20,7 +20,7 @@ You need a user with `role: "admin"` to access the admin panel. Here are a few o
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@cityflow.com",
+    "email": "admin@admin.com",
     "password": "admin123",
     "firstName": "Admin",
     "lastName": "User",
@@ -38,7 +38,7 @@ If you have access to the Fabric CLI:
 peer chaincode invoke \
   -C user-channel \
   -n user \
-  -c '{"function":"CreateUser","Args":["user_admin_001","admin@cityflow.com","hashedpassword","Admin","User","+1234567890","admin"]}'
+  -c '{"function":"CreateUser","Args":["user_admin_001","admin@admin.com","hashedpassword","Admin","User","+1234567890","admin"]}'
 ```
 
 ### Option 3: Register via Frontend and Manually Update
@@ -51,7 +51,7 @@ peer chaincode invoke \
 ### 1. Login
 1. Navigate to http://localhost:5173 (or your frontend URL)
 2. Login with admin credentials:
-   - Email: `admin@cityflow.com`
+   - Email: `admin@admin.com`
    - Password: `admin123` (or your password)
 
 ### 2. Navigate to Admin
@@ -264,7 +264,7 @@ curl -X POST http://localhost:8080/api/v1/charging/stations \
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "admin@cityflow.com",
+    "email": "admin@admin.com",
     "password": "admin123"
   }'
 
