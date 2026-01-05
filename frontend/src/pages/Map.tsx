@@ -91,22 +91,21 @@ export const Map: React.FC = () => {
       
       // Transform API response to match ParkingSpot interface
       const transformedSpots = spotsArray.map((spot: any) => ({
-        id: spot.id || spot.spotId, // Support both formats
+        id: spot.spotId || spot.id, // API returns spotId
         spotNumber: spot.spotNumber,
         location: {
-          latitude: spot.location?.latitude || spot.latitude || 0,
-          longitude: spot.location?.longitude || spot.longitude || 0,
-          address: spot.location?.address || spot.location || 'Unknown',
+          latitude: spot.latitude || spot.location?.latitude || 0,
+          longitude: spot.longitude || spot.location?.longitude || 0,
+          address: spot.location || spot.location?.address || 'Unknown Location',
         },
-        type: (spot.type || spot.spotType) === 'premium' || (spot.type || spot.spotType) === 'standard' 
-          ? 'parking' 
-          : spot.type || spot.spotType, // Map spotType values to 'parking' or 'ev_charging'
+        // If hasEVCharging is true, type is 'ev_charging', otherwise 'parking'
+        type: spot.hasEVCharging ? 'ev_charging' : 'parking',
         status: spot.status || 'available',
         pricePerHour: spot.pricePerHour || 0,
         features: spot.features || [],
-        chargingPower: spot.chargingPower || (spot.hasEVCharging ? 7 : undefined),
+        chargingPower: spot.hasEVCharging ? (spot.chargingPower || 7) : undefined,
         hasEVCharging: spot.hasEVCharging || false,
-        operatorId: spot.operatorId,
+        operatorId: spot.operatorId || '',
         createdAt: spot.createdAt,
         updatedAt: spot.updatedAt,
         txId: spot.txId,
