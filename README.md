@@ -2,6 +2,14 @@
 
 A blockchain-powered smart parking and EV charging management system built with Hyperledger Fabric 2.5, Go, and React.
 
+---
+
+## 📑 Report
+The complete report detailing the project architecture :  
+👉 **[Download the Report (PDF)](docs/report/blockchain_project.pdf)**
+
+---
+
 ## 🌟 Overview
 
 CityFlow is a complete decentralized application (dApp) that leverages blockchain technology to provide transparent, secure, and efficient management of parking spots and EV charging stations. All transactions are recorded on a private Hyperledger Fabric blockchain network with no traditional database dependencies.
