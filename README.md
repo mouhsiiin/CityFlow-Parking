@@ -180,7 +180,7 @@ For detailed setup instructions, see [QUICK_START.md](docs/setup/QUICK_START.md)
 
 Comprehensive documentation is available:
 
-- **[QUICK_START.md](QUICK_START.md)**: Complete guide to sart the project in one CLI shot.
+- **[QUICK_START.md](QUICK_START.md)**: Complete guide to sart the project in one CLI shot,and detailed setup.
 - **[API_DOCUMENTATION.md](docs/setup/API_DOCUMENTATION.md)**: Complete API reference with all endpoints
 - **[HYPERLEDGER_BLOCKCHAIN.md](docs/setup/HYPERLEDGER_BLOCKCHAIN.md)**: Blockchain network setup and management
 - **[SECURITY_MONITORING.md](docs/setup/SECURITY_MONITORING.md)**: Security monitoring system guide
