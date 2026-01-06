@@ -139,7 +139,8 @@ cd backend
 
 # Frontend Setup
 cd ../frontend
-./setup.sh
+npm install
+npm run dev
 ```
 
 ### Access the Application
@@ -163,7 +164,7 @@ Email: john.doe@example.com
 Password: password123
 ```
 
-For detailed setup instructions, see [QUICK_START.md](QUICK_START.md).
+For detailed setup instructions, see [QUICK_START.md](docs/setup/QUICK_START.md).
 
 ## 🎥 Video Demo
 
@@ -180,10 +181,11 @@ Watch a complete system walkthrough and security monitoring (SOC) in action:
 
 Comprehensive documentation is available:
 
-- **[API_DOCUMENTATION.md](API_DOCUMENTATION.md)**: Complete API reference with all endpoints
-- **[HYPERLEDGER_BLOCKCHAIN.md](HYPERLEDGER_BLOCKCHAIN.md)**: Blockchain network setup and management
-- **[SECURITY_MONITORING.md](SECURITY_MONITORING.md)**: Security monitoring system guide
-- **[FRONTEND.md](FRONTEND.md)**: Frontend development and integration guide
+- **[QUICK_START.md](QUICK_START.md)**: Complete guide to sart the project in one CLI shot.
+- **[API_DOCUMENTATION.md](docs/setup/API_DOCUMENTATION.md)**: Complete API reference with all endpoints
+- **[HYPERLEDGER_BLOCKCHAIN.md](docs/setup/HYPERLEDGER_BLOCKCHAIN.md)**: Blockchain network setup and management
+- **[SECURITY_MONITORING.md](docs/setup/SECURITY_MONITORING.md)**: Security monitoring system guide
+- **[FRONTEND.md](docs/setup/FRONTEND.md)**: Frontend development and integration guide
 
 ## 🎯 Use Cases
 
@@ -331,7 +333,7 @@ cd ..
 ./start.sh
 ```
 
-See detailed troubleshooting in [HYPERLEDGER_BLOCKCHAIN.md](HYPERLEDGER_BLOCKCHAIN.md).
+See detailed troubleshooting in [HYPERLEDGER_BLOCKCHAIN.md](docs/setup/HYPERLEDGER_BLOCKCHAIN.md).
 
 ## 📊 API Endpoints
 
@@ -348,7 +350,7 @@ See detailed troubleshooting in [HYPERLEDGER_BLOCKCHAIN.md](HYPERLEDGER_BLOCKCHA
 | **Wallet** | `/wallet`, `/wallet/balance`, `/wallet/add-funds`, `/wallet/transactions` |
 | **Security (Admin)** | `/security/dashboard`, `/security/events`, `/security/alerts` |
 
-See complete API documentation in [API_DOCUMENTATION.md](API_DOCUMENTATION.md).
+See complete API documentation in [API_DOCUMENTATION.md](docs/setup/API_DOCUMENTATION.md).
 
 ## 🔒 Security Features
 

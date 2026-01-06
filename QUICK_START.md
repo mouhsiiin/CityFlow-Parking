@@ -115,11 +115,11 @@ Admin users can access:
 ## 📚 Documentation
 
 - Main README: `/README.md`
-- API Docs: `/API_DOCUMENTATION.md`
-- Blockchain: `/HYPERLEDGER_BLOCKCHAIN.md`
-- Security: `/SECURITY_MONITORING.md`
-- Frontend: `/FRONTEND.md`
-- Test Data: `/backend/TEST_DATA_README.md`
+- API Docs: `/docs/setup/API_DOCUMENTATION.md`
+- Blockchain: `/docs/setup/HYPERLEDGER_BLOCKCHAIN.md`
+- Security: `/docs/setup/SECURITY_MONITORING.md`
+- Frontend: `/docs/setup/FRONTEND.md`
+- Test Data: `/docs/setup/backend/TEST_DATA_README.md`
 
 ## 🐛 Troubleshooting
 

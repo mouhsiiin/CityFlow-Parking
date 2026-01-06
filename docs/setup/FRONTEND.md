@@ -93,7 +93,7 @@ A modern React-based frontend application for smart parking and EV charging mana
 ### Prerequisites
 - Node.js 18+ 
 - npm or yarn
-- Running backend API (see [HYPERLEDGER_BLOCKCHAIN.md](HYPERLEDGER_BLOCKCHAIN.md))
+- Running backend API (see [HYPERLEDGER_BLOCKCHAIN.md](docs/setup/HYPERLEDGER_BLOCKCHAIN.md))
 
 ### Steps
 
@@ -624,7 +624,7 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 
 ## API Integration
 
-The frontend integrates with the Go backend API. See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for complete API reference.
+The frontend integrates with the Go backend API. See [API_DOCUMENTATION.md](docs/setup/API_DOCUMENTATION.md) for complete API reference.
 
 ### Base URL Configuration
 ```typescript
@@ -731,5 +731,5 @@ if (DEBUG) {
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)
 - [Vite Documentation](https://vitejs.dev/)
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [API Documentation](API_DOCUMENTATION.md)
-- [Blockchain Integration](HYPERLEDGER_BLOCKCHAIN.md)
+- [API Documentation](docs/setup/API_DOCUMENTATION.md)
+- [Blockchain Integration](docs/setup/HYPERLEDGER_BLOCKCHAIN.md)
