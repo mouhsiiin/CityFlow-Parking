@@ -4,7 +4,7 @@
 
 ```bash
 # Start everything
-cd backend && ./start.sh && cd .. && cd backend && ./generate_test_data.sh && cd ../frontend && npm run dev
+cd backend && ./start.sh && cd .. && cd backend && ./generate_test_data.sh && cd ../frontend && ./setup.sh
 ```
 
 ## 📋 Test Credentials
