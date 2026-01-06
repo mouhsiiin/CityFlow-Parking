@@ -139,8 +139,7 @@ cd backend
 
 # Frontend Setup
 cd ../frontend
-npm install
-npm run dev
+./setup.sh
 ```
 
 ### Access the Application
