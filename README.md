@@ -8,6 +8,16 @@ A blockchain-powered smart parking and EV charging management system built with 
 The complete report detailing the project architecture :  
 👉 **[Download the Report (PDF)](docs/report/MST-Report-CityFlow.pdf)**
 
+## 🎥 Video Demo
+
+Watch a complete system walkthrough and security monitoring (SOC) in action:
+
+- **System Walkthrough**: Shows the full user journey from registration to parking reservation and EV charging
+- **Security Operations Center (SOC)**: Real-time security event monitoring, alerts, and dashboard analytics
+- **Blockchain Integration**: Live transaction verification and audit trail demonstration
+
+- **Full Demo Video (Google Drive)**: [Watch/Download Demo](https://drive.google.com/file/d/1avT4HCUJItWNpKQdhbTU7OzsStDJ4dg2/view?usp=sharing)
+
 ---
 
 ## 🌟 Overview
@@ -166,22 +176,11 @@ Password: password123
 
 For detailed setup instructions, see [QUICK_START.md](docs/setup/QUICK_START.md).
 
-## 🎥 Video Demo
-
-Watch a complete system walkthrough and security monitoring (SOC) in action:
-
-- **System Walkthrough**: Shows the full user journey from registration to parking reservation and EV charging
-- **Security Operations Center (SOC)**: Real-time security event monitoring, alerts, and dashboard analytics
-- **Blockchain Integration**: Live transaction verification and audit trail demonstration
-
-- **Full Demo Video (Google Drive)**: [Watch/Download Demo](https://drive.google.com/file/d/1avT4HCUJItWNpKQdhbTU7OzsStDJ4dg2/view?usp=sharing)
-
-
 ## 📚 Documentation
 
 Comprehensive documentation is available:
 
-- **[QUICK_START.md](QUICK_START.md)**: Complete guide to sart the project in one CLI shot.
+- **[QUICK_START.md](QUICK_START.md)**: Complete guide to sart the project in one CLI shot,and detailed setup.
 - **[API_DOCUMENTATION.md](docs/setup/API_DOCUMENTATION.md)**: Complete API reference with all endpoints
 - **[HYPERLEDGER_BLOCKCHAIN.md](docs/setup/HYPERLEDGER_BLOCKCHAIN.md)**: Blockchain network setup and management
 - **[SECURITY_MONITORING.md](docs/setup/SECURITY_MONITORING.md)**: Security monitoring system guide
