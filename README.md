@@ -6,7 +6,7 @@ A blockchain-powered smart parking and EV charging management system built with 
 
 ## 📑 Report
 The complete report detailing the project architecture :  
-👉 **[Download the Report (PDF)](docs/report/blockchain_project.pdf)**
+👉 **[Download the Report (PDF)](docs/report/MST-Report-CityFlow.pdf)**
 
 ---
 
