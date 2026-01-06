@@ -181,6 +181,7 @@ Watch a complete system walkthrough and security monitoring (SOC) in action:
 
 Comprehensive documentation is available:
 
+- **[QUICK_START.md](QUICK_START.md)**: Complete guide to sart the project in one CLI shot.
 - **[API_DOCUMENTATION.md](docs/setup/API_DOCUMENTATION.md)**: Complete API reference with all endpoints
 - **[HYPERLEDGER_BLOCKCHAIN.md](docs/setup/HYPERLEDGER_BLOCKCHAIN.md)**: Blockchain network setup and management
 - **[SECURITY_MONITORING.md](docs/setup/SECURITY_MONITORING.md)**: Security monitoring system guide
